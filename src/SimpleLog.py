@@ -1,9 +1,9 @@
 import os
-from collections import Counter
 from enum import Enum
 from pathlib import Path
 import pandas as pd
 from more_itertools import pairwise
+from typing import Set, Dict, Tuple
 
 
 class LogType(Enum):
@@ -28,13 +28,13 @@ class SimpleLog:
         self.df: pd.DataFrame = self.parse_into_df()
         self.direct_follows_graph, self.start_event_set, self.end_event_set = self.get_dfg()
 
-    def parse_into_df(self):
+    def parse_into_df(self) -> pd.DataFrame:
         """
             Function to parse the specified file into the dataframe.
             I'm assuming that this class is fed with preprocessed data so the .csv contains traces only
         """
         if self.log_type == LogType.CSV:
-            df = pd.read_csv(self.path, header=0)
+            df: pd.DataFrame = pd.read_csv(self.path, header=0)
             try:
                 df = df[self.USED_COLUMNS]
             except KeyError as e:
@@ -45,7 +45,7 @@ class SimpleLog:
         elif self.log_type == LogType.X:
             raise NotImplementedError
 
-    def get_dfg(self):
+    def get_dfg(self) -> Tuple[Dict[str, set], set, set]:
         """
             Function to get DFG graph, and start/end event sets from DataFrame containing traces
         :return: direct_follows_graph, start_event_set, end_event_set
@@ -67,6 +67,13 @@ class SimpleLog:
                 if event not in direct_follows_graph.keys():
                     direct_follows_graph[event] = set()
         return direct_follows_graph, start_event_set, end_event_set
+
+    def find_self_loops(self) -> Set[str]:
+        self_loops: Set[str] = set()
+        for event in self.direct_follows_graph:
+            if event in self.direct_follows_graph[event]:
+                self_loops.add(event)
+        return self_loops
 
 
 log = SimpleLog("../logs/preprocessed/phone_trace_only.csv")
