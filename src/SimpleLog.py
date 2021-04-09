@@ -1,9 +1,10 @@
+import ast
 import os
 from enum import Enum
 from pathlib import Path
 import pandas as pd
 from more_itertools import pairwise
-from typing import Set, Dict, Tuple
+from typing import Set, Dict, Tuple, List
 
 
 class LogType(Enum):
@@ -18,15 +19,12 @@ class SimpleLog:
 
         self.path: Path = Path(path)
         if not os.path.isfile(path):
-            print(self.path)
-            raise Exception("Specified path is not a file or does not exist")
-        self.log_type: LogType = None
-        if '.csv' in path:
-            self.log_type = LogType.CSV
-        elif '.x' in path:
-            self.log_type = LogType.X
+            raise Exception(f"Specified path is not a file or does not exist: {path}")
+        self.log_type: LogType = LogType.CSV if '.csv' in path else LogType.X if '.x' in path else None
         self.df: pd.DataFrame = self.parse_into_df()
         self.direct_follows_graph, self.start_event_set, self.end_event_set = self.get_dfg()
+        self.self_loops = self.find_self_loops()
+        self.short_loops = self.find_short_loops()
 
     def parse_into_df(self) -> pd.DataFrame:
         """
@@ -34,7 +32,7 @@ class SimpleLog:
             I'm assuming that this class is fed with preprocessed data so the .csv contains traces only
         """
         if self.log_type == LogType.CSV:
-            df: pd.DataFrame = pd.read_csv(self.path, header=0)
+            df: pd.DataFrame = pd.read_csv(self.path, header=0, converters={'trace': ast.literal_eval})
             try:
                 df = df[self.USED_COLUMNS]
             except KeyError as e:
@@ -69,13 +67,49 @@ class SimpleLog:
         return direct_follows_graph, start_event_set, end_event_set
 
     def find_self_loops(self) -> Set[str]:
+        """
+            Function to discover self loops in DFG. Self loop is when a node has an outgoing edge to itself.
+        :return: Set of nodes that are in self-loops
+        :rtype: Set[str]
+        """
         self_loops: Set[str] = set()
         for event in self.direct_follows_graph:
             if event in self.direct_follows_graph[event]:
                 self_loops.add(event)
         return self_loops
 
+    def find_short_loops(self) -> Set[Tuple[str, str]]:
+        """
+            Function to find short-loops in traces.
+            A short loop is a pattern {a,b,a} in a trace, where a,b - events
+        :return: Set containing pairs {a,b}
+        :rtype: Set[Tuple[str, str]]
+        """
+        short_loops: Set[Tuple[str, str]] = set()
+        # getting trace column, transforming it to tuples, and getting unique traces
+        traces: List[List[str]] = self.df['trace'].transform(tuple).unique()
+        for trace in traces:
+            for source, node, target in zip(trace[0:], trace[1:], trace[2:]):
+                if source == target:
+                    short_loops.add((source, node))
+        return short_loops
+
 
 log = SimpleLog("../logs/preprocessed/phone_trace_only.csv")
 log.parse_into_df()
-print(log.df)
+print(log.find_short_loops())
+# print(log.df)
+"""
+Initial DFG from Fig 2a (8 page)
+dfg_report = \
+    {
+        'a': {'b', 'c', 'd'},
+        'b': {'c', 'd', 'e', 'f'},
+        'c':{'b','f','g',},
+        'd':{'b','e','g'},
+        'e':{'d','c','g','h'},
+        'f':{'g'},
+        'g': {'e','h'},
+        'h':{}
+    }
+"""
