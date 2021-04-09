@@ -1,5 +1,6 @@
 import ast
 import os
+from collections import defaultdict
 from enum import Enum
 from pathlib import Path
 import pandas as pd
@@ -25,6 +26,7 @@ class SimpleLog:
         self.direct_follows_graph, self.start_event_set, self.end_event_set = self.get_dfg()
         self.self_loops = self.find_self_loops()
         self.short_loops = self.find_short_loops()
+        self.arc_frequency = self.count_arc_frequency()
 
     def parse_into_df(self) -> pd.DataFrame:
         """
@@ -47,7 +49,7 @@ class SimpleLog:
         """
             Function to get DFG graph, and start/end event sets from DataFrame containing traces
         :return: direct_follows_graph, start_event_set, end_event_set
-        :rtype:
+        :rtype: Tuple[Dict[str, set], set, set]
         """
         start_event_set = set()
         end_event_set = set()
@@ -82,7 +84,7 @@ class SimpleLog:
         """
             Function to find short-loops in traces.
             A short loop is a pattern {a,b,a} in a trace, where a,b - events
-        :return: Set containing pairs {a,b}
+        :return: Set containing pairs (a,b)
         :rtype: Set[Tuple[str, str]]
         """
         short_loops: Set[Tuple[str, str]] = set()
@@ -94,11 +96,23 @@ class SimpleLog:
                     short_loops.add((source, node))
         return short_loops
 
+    def count_arc_frequency(self) -> Dict[Tuple[str, str], int]:
+        """
+            Function to count arc frequency. Returns a
+        :return: dictionary in format (a,b) : frequency, where a,b - events,
+            frequency - times this transition happens
+        :rtype: Dict[Tuple[str, str], int]
+        """
+        arc_frequency: Dict[Tuple[str, str], int] = defaultdict(int)
+        traces: List[List[str]] = self.df['trace'].tolist()
+        for trace in traces:
+            for source, target in zip(trace, trace[1:]):
+                arc_frequency[(source, target)] += 1
+        return arc_frequency
+
 
 log = SimpleLog("../logs/preprocessed/phone_trace_only.csv")
-log.parse_into_df()
-print(log.find_short_loops())
-# print(log.df)
+print("finished")
 """
 Initial DFG from Fig 2a (8 page)
 dfg_report = \
