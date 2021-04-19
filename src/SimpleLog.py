@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 from more_itertools import pairwise
 from typing import Set, Dict, Tuple, List
-import csv
+from itertools import combinations
 
 
 class LogType(Enum):
@@ -28,6 +28,8 @@ class SimpleLog:
         self.self_loops = self.find_self_loops()
         self.short_loops = self.find_short_loops()
         self.arc_frequency = self.count_arc_frequency()
+        self.concurrent_nodes = set()
+        self.concurrent_nodes.add("Not performed")
 
     def parse_into_df(self) -> pd.DataFrame:
         """
@@ -151,12 +153,38 @@ class SimpleLog:
         :rtype: None
         """
         self.remove_self_short_loops_from_dfg()
+        self.concurrent_nodes = self.find_concurrency()
+
+    def find_concurrency(self, epsilon=0.8) -> Set[Tuple[str, str]]:
+        """
+        Function to find concurrent events. It is based on the dfg and on three formal conditions.
+        Returns a set with concurrent events.
+        :return: Set containing pairs (a,b)
+        :rtype: Set[Tuple[str, str]]
+        """
+        concurrent_nodes = set()
+        arc_frequency: Dict[Tuple[str, str], int] = self.count_arc_frequency()
+        for node_a, node_b in combinations(self.direct_follows_graph.keys(), 2): # check time complexity
+            print(node_a, node_b)
+            if node_b in self.direct_follows_graph[node_a] and node_a in self.direct_follows_graph[node_b]:
+                if ((node_a, node_b) not in self.short_loops) and ((node_b, node_a) not in self.short_loops):
+                    if (abs(arc_frequency[(node_a, node_b)] -
+                            arc_frequency[(node_b, node_a)]))/(arc_frequency[(node_a, node_b)] +
+                                                               arc_frequency[(node_b, node_a)]) < epsilon:
+                        concurrent_nodes.add((node_a, node_b))
+        return concurrent_nodes
+
+
+
+
+
 
 
 log = SimpleLog("../logs/preprocessed/B1.csv")
 log.perform_mining()
 print(log.direct_follows_graph)
 print("finished")
+
 """
 Initial DFG from Fig 2a (8 page)
 dfg_report = \
