@@ -95,7 +95,7 @@ class SimpleLog:
         traces: List[List[str]] = self.df['trace'].transform(tuple).unique()
         for trace in traces:
             for source, node, target in zip(trace[0:], trace[1:], trace[2:]):
-                if source == target:
+                if source == target and (source != node):
                     short_loops.add((source, node))
         return short_loops
 
@@ -143,15 +143,19 @@ class SimpleLog:
         dfs[output_column] = [trace.split(';') for trace in dfs[activity_column]]
         return dfs[[output_column]]
 
+    def perform_mining(self) -> None:
+        """
+        Function to perform sequential steps to run split miner stages
+        Returns a
+        :return: None
+        :rtype: None
+        """
+        self.remove_self_short_loops_from_dfg()
 
 
-
-
-
-# log = SimpleLog("../logs/preprocessed/phone_trace_only.csv")
 log = SimpleLog("../logs/preprocessed/B1.csv")
-#log = SimpleLog("../logs/preprocessed/B1.csv")
-#log.get_traces_from_csv("../logs/raw/B1.csv")
+log.perform_mining()
+print(log.direct_follows_graph)
 print("finished")
 """
 Initial DFG from Fig 2a (8 page)
