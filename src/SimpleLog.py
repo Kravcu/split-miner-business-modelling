@@ -6,6 +6,7 @@ from pathlib import Path
 import pandas as pd
 from more_itertools import pairwise
 from typing import Set, Dict, Tuple, List
+import csv
 
 
 class LogType(Enum):
@@ -36,6 +37,8 @@ class SimpleLog:
         if self.log_type == LogType.CSV:
             df: pd.DataFrame = pd.read_csv(self.path, header=0, converters={'trace': ast.literal_eval})
             try:
+                if not all(elem in df.columns for elem in self.USED_COLUMNS):
+                    df = self.get_traces(self.path)
                 df = df[self.USED_COLUMNS]
             except KeyError as e:
                 raise Exception("Not all needed columns are present in the specified log file.\n"
@@ -110,8 +113,45 @@ class SimpleLog:
                 arc_frequency[(source, target)] += 1
         return arc_frequency
 
+    def remove_self_short_loops_from_dfg(self) -> None:
+        """
+        Function to remove self and short loops from dfg. Returns a
+        :return: None
+        :rtype: None
+        """
+        for self_loop_node in self.self_loops:
+            self.direct_follows_graph[self_loop_node].remove(self_loop_node)
 
-log = SimpleLog("../logs/preprocessed/phone_trace_only.csv")
+        for node_a, node_b in self.short_loops:
+            self.direct_follows_graph[node_a].remove(node_b)
+
+    def get_traces(self, input_path, case_column='Case ID',
+                            activity_column='Activity', start_column='Start Timestamp',
+                            output_column='trace') -> pd.DataFrame:
+        """
+        Function to generate list of traces from csv log file.
+         Input csv has to have Case ID,Activity,Start Timestamp columns. Returns a
+        :return: string which represents file name for generated trace file
+        :rtype: pd.DataFrame
+        """
+        df = pd.read_csv(input_path)
+        dfs = df[[case_column, activity_column, start_column]]
+        dfs = dfs.sort_values(by=[case_column, start_column]) \
+            .groupby([case_column]) \
+            .agg({activity_column: ';'.join})
+        # dfs.rename(columns={activity_column: output_column}, inplace=True)
+        dfs[output_column] = [trace.split(';') for trace in dfs[activity_column]]
+        return dfs[[output_column]]
+
+
+
+
+
+
+# log = SimpleLog("../logs/preprocessed/phone_trace_only.csv")
+log = SimpleLog("../logs/preprocessed/B1.csv")
+#log = SimpleLog("../logs/preprocessed/B1.csv")
+#log.get_traces_from_csv("../logs/raw/B1.csv")
 print("finished")
 """
 Initial DFG from Fig 2a (8 page)
@@ -127,3 +167,4 @@ dfg_report = \
         'h':{}
     }
 """
+

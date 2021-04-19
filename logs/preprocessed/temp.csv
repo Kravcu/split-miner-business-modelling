@@ -1,0 +1,6 @@
+"trace"
+"a,b,a,c,d,e"
+"a,b,a,b,a,c,c,d,e"
+"a,c,e,d"
+"a,c,c,d,e"
+"a,c,c,c,e,d"
