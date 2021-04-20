@@ -1,5 +1,4 @@
 import ast
-import copy
 import os
 from collections import defaultdict
 from enum import Enum
@@ -10,12 +9,13 @@ from typing import Set, Dict, Tuple, List
 from itertools import combinations
 import numpy as np
 
+
 class LogType(Enum):
     CSV = 0
     X = 1  # kluza wspominał coś o jakimś drugim formacie logów, dodałem od razu bo pasowałoby go też mieć
 
 
-class SimpleLog:
+class SplitMiner:
     USED_COLUMNS = ['trace']
 
     def __init__(self, path):
@@ -130,9 +130,10 @@ class SimpleLog:
         for node_a, node_b in self.short_loops:
             self.direct_follows_graph[node_a].remove(node_b)
 
-    def get_traces(self, input_path, case_column='Case ID',
-                            activity_column='Activity', start_column='Start Timestamp',
-                            output_column='trace') -> pd.DataFrame:
+    @staticmethod
+    def get_traces(input_path, case_column='Case ID',
+                   activity_column='Activity', start_column='Start Timestamp',
+                   output_column='trace') -> pd.DataFrame:
         """
         Function to generate list of traces from csv log file.
          Input csv has to have Case ID,Activity,Start Timestamp columns. Returns a
@@ -166,9 +167,9 @@ class SimpleLog:
         :return: Set containing pairs (a,b)
         :rtype: Set[Tuple[str, str]]
         """
-        concurrent_nodes = set()
+        concurrent_nodes: Set[Tuple[str, str]] = set()
         arc_frequency: Dict[Tuple[str, str], int] = self.count_arc_frequency()
-        for node_a, node_b in combinations(self.direct_follows_graph.keys(), 2): # check time complexity
+        for node_a, node_b in combinations(self.direct_follows_graph.keys(), 2):  # check time complexity
             print(node_a, node_b)
             if node_b in self.direct_follows_graph[node_a] and node_a in self.direct_follows_graph[node_b]:
                 if ((node_a, node_b) not in self.short_loops) and ((node_b, node_a) not in self.short_loops):
@@ -193,17 +194,18 @@ class SimpleLog:
 
     def filter_graph(self, pdfg: Dict[str, set], eta):
         
-        most_frequent_edges = self.get_most_frequent_edge_for_each_node(pdfg)
-        frequency_threshold = self.get_percentile_frequency(most_frequent_edges, eta)
+        most_frequent_edges = self.get_most_frequent_edge_for_each_node(pdfg, self.arc_frequency)
+        frequency_threshold = self.get_percentile_frequency(most_frequent_edges, eta, self.arc_frequency)
         most_frequent_edges = self.add_edges_with_greater_threshold(frequency_threshold,
                                                                     most_frequent_edges,
-                                                                    pdfg)
+                                                                    pdfg,
+                                                                    self.arc_frequency)
         filtered_edges = set()
         filtered_graph: Dict[str, set] = dict()
         for node in pdfg.keys():
             filtered_graph[node] = set()
         while len(most_frequent_edges) > 0:
-            edge = self.get_most_frequent_edge_from_set(most_frequent_edges)
+            edge = self.get_most_frequent_edge_from_set(most_frequent_edges, self.arc_frequency)
             node_a, node_b = edge
             if (self.arc_frequency[edge] > frequency_threshold
                     or len(filtered_graph[node_a]) == 0
@@ -213,9 +215,7 @@ class SimpleLog:
             most_frequent_edges.remove(edge)
         self.filtered_graph = filtered_graph
         
-      
-
-    def get_most_frequent_edge_for_each_node(self, graph: Dict[str, set]) -> Set[Tuple[str, str]]:
+    def get_most_frequent_edge_for_each_node(self, graph: Dict[str, set], arc_frequency) -> Set[Tuple[str, str]]:
         """
         Function to get most frequent incoming and outgoing edge of each node
         Returns a
@@ -226,7 +226,7 @@ class SimpleLog:
         for graph_node in graph.keys():
             outgoing_edges_freq: Dict[Tuple[str, str], int] = dict()
             for outgoing_node in graph[graph_node]:
-                outgoing_edges_freq[(graph_node, outgoing_node)] = self.arc_frequency[(graph_node, outgoing_node)]
+                outgoing_edges_freq[(graph_node, outgoing_node)] = arc_frequency[(graph_node, outgoing_node)]
 
             max_outgoing_edge = max(outgoing_edges_freq, key=outgoing_edges_freq.get)
             most_frequent_edges.add(max_outgoing_edge)
@@ -235,20 +235,22 @@ class SimpleLog:
             predecessors = self.get_predecessors(graph, graph_node)
             incoming_edges_freq: Dict[Tuple[str, str], int] = dict()
             for predecessor in predecessors:
-                incoming_edges_freq[predecessor, graph_node] = self.arc_frequency[(predecessor, graph_node)]
+                incoming_edges_freq[predecessor, graph_node] = arc_frequency[(predecessor, graph_node)]
             max_incoming_edge = max(incoming_edges_freq, key=incoming_edges_freq.get)
             most_frequent_edges.add(max_incoming_edge)
 
         return most_frequent_edges
 
-    def get_predecessors(self, graph: Dict[str, set], node: str) -> Set[str]:
+    @staticmethod
+    def get_predecessors(graph: Dict[str, set], node: str) -> Set[str]:
         predecessors = set()
         for graph_node in graph.keys():
             if node in graph[graph_node]:
                 predecessors.add(graph_node)
         return predecessors
     
-    def get_percentile_frequency(self, most_frequent_edges: Set[Tuple[str, str]], eta) -> float:
+    @staticmethod
+    def get_percentile_frequency(most_frequent_edges: Set[Tuple[str, str]], eta, arc_frequency) -> float:
         """
         Function to compute frequency threshold based on the most frequent edges and percentile eta
         Returns a
@@ -257,11 +259,12 @@ class SimpleLog:
         """
         frequencies = []
         for node_a, node_b in most_frequent_edges:
-            frequencies.append(self.arc_frequency[(node_a, node_b)])
+            frequencies.append(arc_frequency[(node_a, node_b)])
         return np.percentile(np.array(frequencies), eta)
     
-    def add_edges_with_greater_threshold(self, threshold, actual_edges: Set[Tuple[str, str]],
-                                         graph: Dict[str, set]) -> Set[Tuple[str, str]]:
+    @staticmethod
+    def add_edges_with_greater_threshold(threshold, actual_edges: Set[Tuple[str, str]],
+                                         graph: Dict[str, set], arc_frequency) -> Set[Tuple[str, str]]:
         """
         Function to add all edges with the frequency greater than threshold to the actual set of max edges
         Returns a
@@ -270,11 +273,12 @@ class SimpleLog:
         """
         for node, succ_set in graph.items():
             for succ in succ_set:
-                if self.arc_frequency[(node, succ)] > threshold:
+                if arc_frequency[(node, succ)] > threshold:
                     actual_edges.add((node, succ))
         return actual_edges
     
-    def get_most_frequent_edge_from_set(self, edges: Set[Tuple[str, str]]) -> Tuple[str, str]:
+    @staticmethod
+    def get_most_frequent_edge_from_set(edges: Set[Tuple[str, str]], arc_frequency) -> Tuple[str, str]:
         """
         Function to find the most frequent edge from a given set of edges
         Returns a
@@ -283,12 +287,13 @@ class SimpleLog:
         """
         frequencies = dict()
         for edge in edges:
-            frequencies[edge] = self.arc_frequency[edge]
+            frequencies[edge] = arc_frequency[edge]
         return max(frequencies, key=frequencies.get)
 
-log = SimpleLog("../logs/preprocessed/B1.csv")
-log.perform_mining()
-print(log.direct_follows_graph)
+
+# log = SplitMiner("../logs/preprocessed/B1.csv")
+# log.perform_mining()
+# print(log.direct_follows_graph)
 print("finished")
 
 """
@@ -305,4 +310,3 @@ dfg_report = \
         'h':{}
     }
 """
-
