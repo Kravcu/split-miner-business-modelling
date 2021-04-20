@@ -1,4 +1,5 @@
 import ast
+import copy
 import os
 from collections import defaultdict
 from enum import Enum
@@ -30,6 +31,7 @@ class SimpleLog:
         self.arc_frequency = self.count_arc_frequency()
         self.concurrent_nodes = set()
         self.concurrent_nodes.add("Not performed")
+        self.pdfg = dict()
 
     def parse_into_df(self) -> pd.DataFrame:
         """
@@ -154,6 +156,7 @@ class SimpleLog:
         """
         self.remove_self_short_loops_from_dfg()
         self.concurrent_nodes = self.find_concurrency()
+        self.pdfg = self.generate_pdfg()
 
     def find_concurrency(self, epsilon=0.8) -> Set[Tuple[str, str]]:
         """
@@ -174,9 +177,18 @@ class SimpleLog:
                         concurrent_nodes.add((node_a, node_b))
         return concurrent_nodes
 
-
-
-
+    def generate_pdfg(self) -> Dict[str, set]:
+        """
+        Function to prune concurrent events and generate pruned dfg.
+        Returns a
+        :return: pruned direct_follows_graph
+        :rtype: Dict[str, set]
+        """
+        pdfg = self.direct_follows_graph.copy()
+        for node_a, node_b in self.concurrent_nodes:
+            pdfg[node_a].remove(node_b)
+            pdfg[node_b].remove(node_a)
+        return pdfg
 
 
 
