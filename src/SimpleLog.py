@@ -32,6 +32,7 @@ class SimpleLog:
         self.concurrent_nodes = set()
         self.concurrent_nodes.add("Not performed")
         self.pdfg = dict()
+        self.filtered_graph = dict()
 
     def parse_into_df(self) -> pd.DataFrame:
         """
@@ -190,13 +191,27 @@ class SimpleLog:
             pdfg[node_b].remove(node_a)
         return pdfg
 
-    def filter_graph(self, pdfg, eta):
+    def filter_graph(self, pdfg: Dict[str, set], eta):
         
         most_frequent_edges = self.get_most_frequent_edge_for_each_node(pdfg)
         frequency_threshold = self.get_percentile_frequency(most_frequent_edges, eta)
         most_frequent_edges = self.add_edges_with_greater_threshold(frequency_threshold,
                                                                     most_frequent_edges,
                                                                     pdfg)
+        filtered_edges = set()
+        filtered_graph: Dict[str, set] = dict()
+        for node in pdfg.keys():
+            filtered_graph[node] = set()
+        while len(most_frequent_edges) > 0:
+            edge = self.get_most_frequent_edge_from_set(most_frequent_edges)
+            node_a, node_b = edge
+            if (self.arc_frequency[edge] > frequency_threshold
+                    or len(filtered_graph[node_a]) == 0
+                    or len(self.get_predecessors(filtered_graph, node_b)) == 0):
+                filtered_edges.add(edge)
+                filtered_graph[node_a].add(node_b)
+            most_frequent_edges.remove(edge)
+        self.filtered_graph = filtered_graph
         
       
 
@@ -251,14 +266,25 @@ class SimpleLog:
         Function to add all edges with the frequency greater than threshold to the actual set of max edges
         Returns a
         :return: updated max edges
-        :rtype: Set[Tuple[str, str]
+        :rtype: Set[Tuple[str, str]]
         """
         for node, succ_set in graph.items():
             for succ in succ_set:
                 if self.arc_frequency[(node, succ)] > threshold:
                     actual_edges.add((node, succ))
         return actual_edges
-
+    
+    def get_most_frequent_edge_from_set(self, edges: Set[Tuple[str, str]]) -> Tuple[str, str]:
+        """
+        Function to find the most frequent edge from a given set of edges
+        Returns a
+        :return: edge with the highest frequency
+        :rtype: Tuple[str, str]
+        """
+        frequencies = dict()
+        for edge in edges:
+            frequencies[edge] = self.arc_frequency[edge]
+        return max(frequencies, key=frequencies.get)
 
 log = SimpleLog("../logs/preprocessed/B1.csv")
 log.perform_mining()
