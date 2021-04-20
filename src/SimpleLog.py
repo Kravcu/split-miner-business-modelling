@@ -8,8 +8,7 @@ import pandas as pd
 from more_itertools import pairwise
 from typing import Set, Dict, Tuple, List
 from itertools import combinations
-from operator import itemgetter
-
+import numpy as np
 
 class LogType(Enum):
     CSV = 0
@@ -191,8 +190,12 @@ class SimpleLog:
             pdfg[node_b].remove(node_a)
         return pdfg
 
-    def filter_graph(self, eta):
-        raise NotImplementedError
+    def filter_graph(self, pdfg, eta):
+        
+        most_frequent_edges = self.get_most_frequent_edge_for_each_node(pdfg)
+        frequency_threshold = self.get_percentile_frequency(most_frequent_edges, eta)
+        
+      
 
     def get_most_frequent_edge_for_each_node(self, graph: Dict[str, set]) -> Set[Tuple[str, str]]:
         """
@@ -226,6 +229,18 @@ class SimpleLog:
             if node in graph[graph_node]:
                 predecessors.add(graph_node)
         return predecessors
+    
+    def get_percentile_frequency(self, most_frequent_edges: Set[Tuple[str, str]], eta) -> float:
+        """
+        Function to compute frequency threshold based on the most frequent edges and percentile eta
+        Returns a
+        :return: frequency threshold
+        :rtype: float
+        """
+        frequencies = []
+        for node_a, node_b in most_frequent_edges:
+            frequencies.append(self.arc_frequency[(node_a, node_b)])
+        return np.percentile(np.array(frequencies), eta)
 
 
 log = SimpleLog("../logs/preprocessed/B1.csv")
