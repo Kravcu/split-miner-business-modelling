@@ -8,6 +8,7 @@ import pandas as pd
 from more_itertools import pairwise
 from typing import Set, Dict, Tuple, List
 from itertools import combinations
+from operator import itemgetter
 
 
 class LogType(Enum):
@@ -190,6 +191,41 @@ class SimpleLog:
             pdfg[node_b].remove(node_a)
         return pdfg
 
+    def filter_graph(self, eta):
+        raise NotImplementedError
+
+    def get_most_frequent_edge_for_each_node(self, graph: Dict[str, set]) -> Set[Tuple[str, str]]:
+        """
+        Function to get most frequent incoming and outgoing edge of each node
+        Returns a
+        :return: set of the most frequent edges
+        :rtype: Set[str, str]
+        """
+        most_frequent_edges = set()
+        for graph_node in graph.keys():
+            outgoing_edges_freq: Dict[Tuple[str, str], int] = dict()
+            for outgoing_node in graph[graph_node]:
+                outgoing_edges_freq[(graph_node, outgoing_node)] = self.arc_frequency[(graph_node, outgoing_node)]
+
+            max_outgoing_edge = max(outgoing_edges_freq, key=outgoing_edges_freq.get)
+            most_frequent_edges.add(max_outgoing_edge)
+
+            # to do predecessors
+            predecessors = self.get_predecessors(graph, graph_node)
+            incoming_edges_freq: Dict[Tuple[str, str], int] = dict()
+            for predecessor in predecessors:
+                incoming_edges_freq[predecessor, graph_node] = self.arc_frequency[(predecessor, graph_node)]
+            max_incoming_edge = max(incoming_edges_freq, key=incoming_edges_freq.get)
+            most_frequent_edges.add(max_incoming_edge)
+
+        return most_frequent_edges
+
+    def get_predecessors(self, graph: Dict[str, set], node: str) -> Set[str]:
+        predecessors = set()
+        for graph_node in graph.keys():
+            if node in graph[graph_node]:
+                predecessors.add(graph_node)
+        return predecessors
 
 
 log = SimpleLog("../logs/preprocessed/B1.csv")
