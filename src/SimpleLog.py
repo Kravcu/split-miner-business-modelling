@@ -194,6 +194,9 @@ class SimpleLog:
         
         most_frequent_edges = self.get_most_frequent_edge_for_each_node(pdfg)
         frequency_threshold = self.get_percentile_frequency(most_frequent_edges, eta)
+        most_frequent_edges = self.add_edges_with_greater_threshold(frequency_threshold,
+                                                                    most_frequent_edges,
+                                                                    pdfg)
         
       
 
@@ -241,6 +244,20 @@ class SimpleLog:
         for node_a, node_b in most_frequent_edges:
             frequencies.append(self.arc_frequency[(node_a, node_b)])
         return np.percentile(np.array(frequencies), eta)
+    
+    def add_edges_with_greater_threshold(self, threshold, actual_edges: Set[Tuple[str, str]],
+                                         graph: Dict[str, set]) -> Set[Tuple[str, str]]:
+        """
+        Function to add all edges with the frequency greater than threshold to the actual set of max edges
+        Returns a
+        :return: updated max edges
+        :rtype: Set[Tuple[str, str]
+        """
+        for node, succ_set in graph.items():
+            for succ in succ_set:
+                if self.arc_frequency[(node, succ)] > threshold:
+                    actual_edges.add((node, succ))
+        return actual_edges
 
 
 log = SimpleLog("../logs/preprocessed/B1.csv")
