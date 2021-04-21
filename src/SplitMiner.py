@@ -192,20 +192,20 @@ class SplitMiner:
             pdfg[node_b].remove(node_a)
         return pdfg
 
-    def filter_graph(self, pdfg: Dict[str, set], eta):
+    def filter_graph(self, pdfg: Dict[str, set], eta, arc_frequency):
         
-        most_frequent_edges = self.get_most_frequent_edge_for_each_node(pdfg, self.arc_frequency)
-        frequency_threshold = self.get_percentile_frequency(most_frequent_edges, eta, self.arc_frequency)
+        most_frequent_edges = self.get_most_frequent_edge_for_each_node(pdfg, arc_frequency)
+        frequency_threshold = self.get_percentile_frequency(most_frequent_edges, eta, arc_frequency)
         most_frequent_edges = self.add_edges_with_greater_threshold(frequency_threshold,
                                                                     most_frequent_edges,
                                                                     pdfg,
-                                                                    self.arc_frequency)
+                                                                    arc_frequency)
         filtered_edges = set()
         filtered_graph: Dict[str, set] = dict()
         for node in pdfg.keys():
             filtered_graph[node] = set()
         while len(most_frequent_edges) > 0:
-            edge = self.get_most_frequent_edge_from_set(most_frequent_edges, self.arc_frequency)
+            edge = self.get_most_frequent_edge_from_set(most_frequent_edges, arc_frequency)
             node_a, node_b = edge
             if (self.arc_frequency[edge] > frequency_threshold
                     or len(filtered_graph[node_a]) == 0
@@ -228,16 +228,18 @@ class SplitMiner:
             for outgoing_node in graph[graph_node]:
                 outgoing_edges_freq[(graph_node, outgoing_node)] = arc_frequency[(graph_node, outgoing_node)]
 
-            max_outgoing_edge = max(outgoing_edges_freq, key=outgoing_edges_freq.get)
-            most_frequent_edges.add(max_outgoing_edge)
+            if len(graph[graph_node]) > 0:
+                max_outgoing_edge = max(outgoing_edges_freq, key=outgoing_edges_freq.get)
+                most_frequent_edges.add(max_outgoing_edge)
 
             # to do predecessors
             predecessors = self.get_predecessors(graph, graph_node)
             incoming_edges_freq: Dict[Tuple[str, str], int] = dict()
             for predecessor in predecessors:
                 incoming_edges_freq[predecessor, graph_node] = arc_frequency[(predecessor, graph_node)]
-            max_incoming_edge = max(incoming_edges_freq, key=incoming_edges_freq.get)
-            most_frequent_edges.add(max_incoming_edge)
+            if len(predecessors) > 0:
+                max_incoming_edge = max(incoming_edges_freq, key=incoming_edges_freq.get)
+                most_frequent_edges.add(max_incoming_edge)
 
         return most_frequent_edges
 
