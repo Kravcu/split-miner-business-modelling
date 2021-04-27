@@ -9,6 +9,8 @@ from typing import Set, Dict, Tuple, List
 from itertools import combinations
 import numpy as np
 
+from src.BpmnModel import BpmnModel
+
 
 class LogType(Enum):
     CSV = 0
@@ -33,6 +35,7 @@ class SplitMiner:
         self.concurrent_nodes.add("Not performed")
         self.pdfg = dict()
         self.filtered_graph = dict()
+        self.bpmn_model = BpmnModel("Not implemented", "Not implemented", set(), set(), set(), set(), set())
 
     def parse_into_df(self) -> pd.DataFrame:
         """
@@ -291,7 +294,25 @@ class SplitMiner:
         for edge in edges:
             frequencies[edge] = arc_frequency[edge]
         return max(frequencies, key=frequencies.get)
+    
+    def discover_splits(self, filtered_pdfg: Dict[str, set], node_a: str,
+                        concurrent_nodes: Set[Tuple[str, str]]):
+        splits: Dict[str, Tuple[set, set]] = dict()
+        node_a_successors = filtered_pdfg[node_a]
+        splits = self.get_init_splits_for_node(concurrent_nodes, node_a_successors, splits)
 
+    def get_init_splits_for_node(self, concurrent_nodes: Set[Tuple[str, str]], node_a_successors: Set[str],
+                                 splits: Dict[str, Tuple[set, set]]):
+
+        for successor in node_a_successors:
+            successor_cover = {successor}
+            successor_future = set()
+            for successor_temp in node_a_successors:
+                if successor_temp != successor and ((successor, successor_temp) in concurrent_nodes or
+                                                    (successor_temp, successor) in concurrent_nodes):
+                    successor_future.add(successor_temp)
+            splits[successor] = (successor_cover, successor_future)
+        return splits
 
 # log = SplitMiner("../logs/preprocessed/B1.csv")
 # log.perform_mining()

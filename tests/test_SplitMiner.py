@@ -75,4 +75,14 @@ class TestSplitMiner(TestCase):
 		            'h': set()}
 		
 		self.assertEqual(expected, result)
-		
+
+	def test_get_init_splits_for_node(self):
+		concurrent_nodes = {("b", "c"), ("b", "d")}
+		successors = {"b", "c", "d"}
+		splits = dict()
+		result = self.split_miner.get_init_splits_for_node(concurrent_nodes, successors, splits)
+		expected = {"b": ({"b"}, {"c", "d"}),
+					"c": ({"c"}, {"b"}),
+					"d": ({"d"}, {"b"})}
+
+		self.assertEqual(expected, result)
