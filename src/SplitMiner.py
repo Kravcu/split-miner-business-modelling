@@ -366,6 +366,46 @@ class SplitMiner:
             if not x:
                 flag = False
 
+    def discover_and_splits(self, bpmn: BpmnModel, successors: Set[str], splits: Dict[str, Tuple[set, set]],
+                            actual_node: str) -> None:
+        """
+        Function to modify the given split structure in order to introduce and splits. It is base on the special algorithm.
+        Returns a
+        :return:None
+        :rtype: None
+        """
+        a = set()
+        for successor1 in successors:
+            a = set()
+            cover_u, future_i = splits[successor1]
+            cover_future_1 = cover_u | future_i
+
+            for successor2 in successors:
+                cover2, future2 = splits[successor2]
+                cover_future_2 = cover2 | future2
+                if cover_future_1 == cover_future_2 and successor2 is not successor1:
+                    a.add(successor2)
+                    cover_u = cover_u | cover2
+                    future_i = future_i.intersection(future2)
+
+            if a:
+                a = a | {successor1}
+                break
+        if a:
+            and_gateway = f"and{actual_node}"
+            for node in a:
+                bpmn.edges.add((and_gateway, node))
+                splits.pop(node)
+            for node in cover_u:
+                cover, future = splits.get(and_gateway, (set(), set()))
+                cover.add(node)
+                splits[and_gateway] = (cover, future)
+            for node in future_i:
+                cover, future = splits.get(and_gateway, (set(), set()))
+                future.add(node)
+                splits[and_gateway] = (cover, future)
+            successors.add(and_gateway)
+            successors = successors - a
 
 
 
