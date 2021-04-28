@@ -1,5 +1,6 @@
 from unittest import TestCase
 
+from src.BpmnModel import BpmnModel
 from src.SplitMiner import SplitMiner
 
 
@@ -86,3 +87,18 @@ class TestSplitMiner(TestCase):
 					"d": ({"d"}, {"b"})}
 
 		self.assertEqual(expected, result)
+
+	def test_discover_xor_splits(self):
+		bpmn = BpmnModel("", "", set(), set(), set(), set(), set())
+		splits = {"b": ({"b"}, {"c", "d"}),
+					"c": ({"c"}, {"b"}),
+					"d": ({"d"}, {"b"})}
+		succesors = {"b", "c", "d"}
+		actual_node = "b"
+		self.split_miner.discover_xor_splits(bpmn, succesors, splits, actual_node)
+		expected = {"b": ({"b"}, {"c", "d"}),
+					"xorb": ({"c", "d"}, {"b"})}
+
+		self.assertEqual(expected, splits)
+
+

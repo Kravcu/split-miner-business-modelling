@@ -1,5 +1,7 @@
 import ast
+import copy
 import os
+import random
 from collections import defaultdict
 from enum import Enum
 from pathlib import Path
@@ -297,12 +299,21 @@ class SplitMiner:
     
     def discover_splits(self, filtered_pdfg: Dict[str, set], node_a: str,
                         concurrent_nodes: Set[Tuple[str, str]]):
+        """
+        Function to orchestrate split discovery, it uses functions which discover different types of splits
+        """
         splits: Dict[str, Tuple[set, set]] = dict()
         node_a_successors = filtered_pdfg[node_a]
         splits = self.get_init_splits_for_node(concurrent_nodes, node_a_successors, splits)
 
     def get_init_splits_for_node(self, concurrent_nodes: Set[Tuple[str, str]], node_a_successors: Set[str],
-                                 splits: Dict[str, Tuple[set, set]]):
+                                 splits: Dict[str, Tuple[set, set]]) -> Dict[str, Tuple[set, set]]:
+        """
+        Function to generate initial covers and futures of each successor of the given task
+        Returns a
+        :return:initialized splits with the cover and future
+        :rtype: Dict[str, Tuple[set, set]]
+        """
 
         for successor in node_a_successors:
             successor_cover = {successor}
@@ -313,6 +324,50 @@ class SplitMiner:
                     successor_future.add(successor_temp)
             splits[successor] = (successor_cover, successor_future)
         return splits
+
+    def discover_xor_splits(self, bpmn: BpmnModel, successors: Set[str], splits: Dict[str, Tuple[set, set]],
+                            actual_node: str) -> None:
+        """
+        Function to modify the given split structure in order to introduce xor splits. It is base on the special algorithm.
+        Returns a
+        :return:None
+        :rtype: None
+        """
+        flag = True
+        while flag:
+            x = set()
+            for successor1 in successors:
+                cover_u, future_s = splits[successor1]
+                future_k1 = copy.copy(future_s)
+                for successor2 in successors:
+                    future_k2 = splits[successor2][1]
+                    if future_k1 == future_k2 and successor1 != successor2:
+                        x.add(successor2)
+                        cover_u = cover_u | splits[successor2][0]
+                if x:
+                    x = x | {successor1}
+                    break
+            if x:
+                xor = f"xor{actual_node}"
+                bpmn.xor_events.add(xor)
+                for node in x:
+                    bpmn.edges.add((xor, node))
+                    splits.pop(node)
+                for node in cover_u:
+                    cover, future = splits.get(xor, (set(), set()))
+                    cover.add(node)
+                    splits[xor] = (cover, future)
+                for node in future_s:
+                    cover, future = splits.get(xor, (set(), set()))
+                    future.add(node)
+                    splits[xor] = (cover, future)
+                successors.add(xor)
+                successors = successors - x
+            if not x:
+                flag = False
+
+
+
 
 # log = SplitMiner("../logs/preprocessed/B1.csv")
 # log.perform_mining()
