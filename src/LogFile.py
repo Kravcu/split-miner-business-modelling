@@ -19,12 +19,23 @@ class LogFile:
                  activity_column: str = 'Activity', start_column: str = 'Start Timestamp',
                  output_column: str = 'trace'):
         self._path = self.get_path_as_object(path_to_log)
+        self.check_if_valid_log_file()
         self._log_type = self.get_log_type(self._path)
         self._case_column: str = case_column
         self._activity_column: str = activity_column
         self._start_column: str = start_column
         self._output_column: str = output_column
         self._traces = self.parse_log_file()
+
+    def check_if_valid_log_file(self) -> None:
+        """
+        Checks if path to log file points to an existing file, if not raises exception.
+        :return: None
+        :rtype: None
+        :raise AttributeError: if path does not point to file of file does not exist
+        """
+        if not self._path.is_file() or not self._path.exists():
+            raise AttributeError("Specified path does not lead to a file")
 
     def parse_log_file(self) -> pd.DataFrame:
         """
