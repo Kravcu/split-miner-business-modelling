@@ -11,7 +11,7 @@ from typing import Set, Dict, Tuple, List
 from itertools import combinations
 import numpy as np
 
-from src.BpmnModel import BpmnModel
+from src.BPMNModel import BPMNModel
 
 
 class LogType(Enum):
@@ -37,7 +37,7 @@ class SplitMiner:
         self.concurrent_nodes.add("Not performed")
         self.pdfg = dict()
         self.filtered_graph = dict()
-        self.bpmn_model = BpmnModel("Not implemented", "Not implemented", set(), set(), set(), set(), set())
+        self.bpmn_model = BPMNModel("Not implemented", "Not implemented", set(), set(), set(), set(), set())
 
     def parse_into_df(self) -> pd.DataFrame:
         """
@@ -179,8 +179,8 @@ class SplitMiner:
             if node_b in self.direct_follows_graph[node_a] and node_a in self.direct_follows_graph[node_b]:
                 if ((node_a, node_b) not in self.short_loops) and ((node_b, node_a) not in self.short_loops):
                     if (abs(arc_frequency[(node_a, node_b)] -
-                            arc_frequency[(node_b, node_a)]))/(arc_frequency[(node_a, node_b)] +
-                                                               arc_frequency[(node_b, node_a)]) < epsilon:
+                            arc_frequency[(node_b, node_a)])) / (arc_frequency[(node_a, node_b)] +
+                                                                 arc_frequency[(node_b, node_a)]) < epsilon:
                         concurrent_nodes.add((node_a, node_b))
         return concurrent_nodes
 
@@ -198,7 +198,7 @@ class SplitMiner:
         return pdfg
 
     def filter_graph(self, pdfg: Dict[str, set], eta, arc_frequency):
-        
+
         most_frequent_edges = self.get_most_frequent_edge_for_each_node(pdfg, arc_frequency)
         frequency_threshold = self.get_percentile_frequency(most_frequent_edges, eta, arc_frequency)
         most_frequent_edges = self.add_edges_with_greater_threshold(frequency_threshold,
@@ -219,7 +219,7 @@ class SplitMiner:
                 filtered_graph[node_a].add(node_b)
             most_frequent_edges.remove(edge)
         self.filtered_graph = filtered_graph
-        
+
     def get_most_frequent_edge_for_each_node(self, graph: Dict[str, set], arc_frequency) -> Set[Tuple[str, str]]:
         """
         Function to get most frequent incoming and outgoing edge of each node
@@ -255,7 +255,7 @@ class SplitMiner:
             if node in graph[graph_node]:
                 predecessors.add(graph_node)
         return predecessors
-    
+
     @staticmethod
     def get_percentile_frequency(most_frequent_edges: Set[Tuple[str, str]], eta, arc_frequency) -> float:
         """
@@ -268,7 +268,7 @@ class SplitMiner:
         for node_a, node_b in most_frequent_edges:
             frequencies.append(arc_frequency[(node_a, node_b)])
         return np.percentile(np.array(frequencies), eta)
-    
+
     @staticmethod
     def add_edges_with_greater_threshold(threshold, actual_edges: Set[Tuple[str, str]],
                                          graph: Dict[str, set], arc_frequency) -> Set[Tuple[str, str]]:
@@ -283,7 +283,7 @@ class SplitMiner:
                 if arc_frequency[(node, succ)] > threshold:
                     actual_edges.add((node, succ))
         return actual_edges
-    
+
     @staticmethod
     def get_most_frequent_edge_from_set(edges: Set[Tuple[str, str]], arc_frequency) -> Tuple[str, str]:
         """
@@ -296,7 +296,7 @@ class SplitMiner:
         for edge in edges:
             frequencies[edge] = arc_frequency[edge]
         return max(frequencies, key=frequencies.get)
-    
+
     def discover_splits(self, filtered_pdfg: Dict[str, set], node_a: str,
                         concurrent_nodes: Set[Tuple[str, str]]):
         """
@@ -325,7 +325,7 @@ class SplitMiner:
             splits[successor] = (successor_cover, successor_future)
         return splits
 
-    def discover_xor_splits(self, bpmn: BpmnModel, successors: Set[str], splits: Dict[str, Tuple[set, set]],
+    def discover_xor_splits(self, bpmn: BPMNModel, successors: Set[str], splits: Dict[str, Tuple[set, set]],
                             actual_node: str) -> None:
         """
         Function to modify the given split structure in order to introduce xor splits. It is base on the special algorithm.
@@ -366,7 +366,7 @@ class SplitMiner:
             if not x:
                 flag = False
 
-    def discover_and_splits(self, bpmn: BpmnModel, successors: Set[str], splits: Dict[str, Tuple[set, set]],
+    def discover_and_splits(self, bpmn: BPMNModel, successors: Set[str], splits: Dict[str, Tuple[set, set]],
                             actual_node: str) -> None:
         """
         Function to modify the given split structure in order to introduce and splits. It is base on the special algorithm.
@@ -406,7 +406,6 @@ class SplitMiner:
                 splits[and_gateway] = (cover, future)
             successors.add(and_gateway)
             successors = successors - a
-
 
 
 # log = SplitMiner("../logs/preprocessed/B1.csv")

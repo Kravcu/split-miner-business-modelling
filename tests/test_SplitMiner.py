@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from src.BpmnModel import BpmnModel
+from src.BPMNModel import BPMNModel
 from src.SplitMiner import SplitMiner
 
 
@@ -89,7 +89,7 @@ class TestSplitMiner(TestCase):
 		self.assertEqual(expected, result)
 
 	def test_discover_xor_splits(self):
-		bpmn = BpmnModel("", "", set(), set(), set(), set(), set())
+		bpmn = BPMNModel("", "", set(), set(), set(), set(), set())
 		splits = {"b": ({"b"}, {"c", "d"}),
 					"c": ({"c"}, {"b"}),
 					"d": ({"d"}, {"b"})}
