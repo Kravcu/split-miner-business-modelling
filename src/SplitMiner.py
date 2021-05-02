@@ -1,16 +1,13 @@
-import ast
 import copy
-import os
-import random
 from collections import defaultdict
 from enum import Enum
-from pathlib import Path
-import pandas as pd
-from more_itertools import pairwise
-from typing import Set, Dict, Tuple, List
 from itertools import combinations
-import numpy as np
+from typing import Set, Dict, Tuple, List
 
+import numpy as np
+from more_itertools import pairwise
+
+from src.LogFile import LogFile
 from src.BPMNModel import BPMNModel
 
 
@@ -24,11 +21,7 @@ class SplitMiner:
 
     def __init__(self, path):
 
-        self.path: Path = Path(path)
-        if not os.path.isfile(path):
-            raise Exception(f"Specified path is not a file or does not exist: {path}")
-        self.log_type: LogType = LogType.CSV if '.csv' in path else LogType.X if '.x' in path else None
-        self.df: pd.DataFrame = self.parse_into_df()
+        self.log = LogFile(path)
         self.direct_follows_graph, self.start_event_set, self.end_event_set = self.get_dfg()
         self.self_loops = self.find_self_loops()
         self.short_loops = self.find_short_loops()
@@ -39,24 +32,6 @@ class SplitMiner:
         self.filtered_graph = dict()
         self.bpmn_model = BPMNModel("Not implemented", "Not implemented", set(), set(), set(), set(), set())
 
-    def parse_into_df(self) -> pd.DataFrame:
-        """
-            Function to parse the specified file into the dataframe.
-            I'm assuming that this class is fed with preprocessed data so the .csv contains traces only
-        """
-        if self.log_type == LogType.CSV:
-            df: pd.DataFrame = pd.read_csv(self.path, header=0, converters={'trace': ast.literal_eval})
-            try:
-                if not all(elem in df.columns for elem in self.USED_COLUMNS):
-                    df = self.get_traces(self.path)
-                df = df[self.USED_COLUMNS]
-            except KeyError as e:
-                raise Exception("Not all needed columns are present in the specified log file.\n"
-                                f"Needed: {self.USED_COLUMNS}\n"
-                                f"Traceback: {str(e)}")
-            return df
-        elif self.log_type == LogType.X:
-            raise NotImplementedError
 
     def get_dfg(self) -> Tuple[Dict[str, set], set, set]:
         """
@@ -67,7 +42,7 @@ class SplitMiner:
         start_event_set = set()
         end_event_set = set()
         direct_follows_graph = dict()
-        for index, row in self.df.iterrows():
+        for index, row in self.log.traces.iterrows():
             if row['trace'][0] not in start_event_set:
                 start_event_set.add(row['trace'][0])
             if row['trace'][-1] not in end_event_set:
@@ -102,7 +77,7 @@ class SplitMiner:
         """
         short_loops: Set[Tuple[str, str]] = set()
         # getting trace column, transforming it to tuples, and getting unique traces
-        traces: List[List[str]] = self.df['trace'].transform(tuple).unique()
+        traces: List[List[str]] = self.log.traces['trace'].transform(tuple).unique()
         for trace in traces:
             for source, node, target in zip(trace[0:], trace[1:], trace[2:]):
                 if source == target and (source != node):
@@ -117,7 +92,7 @@ class SplitMiner:
         :rtype: Dict[Tuple[str, str], int]
         """
         arc_frequency: Dict[Tuple[str, str], int] = defaultdict(int)
-        traces: List[List[str]] = self.df['trace'].tolist()
+        traces: List[List[str]] = self.log.traces['trace'].tolist()
         for trace in traces:
             for source, target in zip(trace, trace[1:]):
                 arc_frequency[(source, target)] += 1
@@ -135,24 +110,7 @@ class SplitMiner:
         for node_a, node_b in self.short_loops:
             self.direct_follows_graph[node_a].remove(node_b)
 
-    @staticmethod
-    def get_traces(input_path, case_column='Case ID',
-                   activity_column='Activity', start_column='Start Timestamp',
-                   output_column='trace') -> pd.DataFrame:
-        """
-        Function to generate list of traces from csv log file.
-         Input csv has to have Case ID,Activity,Start Timestamp columns. Returns a
-        :return: string which represents file name for generated trace file
-        :rtype: pd.DataFrame
-        """
-        df = pd.read_csv(input_path)
-        dfs = df[[case_column, activity_column, start_column]]
-        dfs = dfs.sort_values(by=[case_column, start_column]) \
-            .groupby([case_column]) \
-            .agg({activity_column: ';'.join})
-        # dfs.rename(columns={activity_column: output_column}, inplace=True)
-        dfs[output_column] = [trace.split(';') for trace in dfs[activity_column]]
-        return dfs[[output_column]]
+
 
     def perform_mining(self) -> None:
         """
