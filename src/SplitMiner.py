@@ -25,7 +25,7 @@ class SplitMiner:
 
     def get_dfg(self) -> Tuple[Dict[str, set], set, set]:
         """
-            Function to get DFG graph, and start/end event sets from DataFrame containing traces
+        Function to get DFG graph, and start/end event sets from DataFrame containing traces
         :return: direct_follows_graph, start_event_set, end_event_set
         :rtype: Tuple[Dict[str, set], set, set]
         """
@@ -48,7 +48,7 @@ class SplitMiner:
 
     def find_self_loops(self) -> Set[str]:
         """
-            Function to discover self loops in DFG. Self loop is when a node has an outgoing edge to itself.
+        Function to discover self loops in DFG. Self loop is when a node has an outgoing edge to itself.
         :return: Set of nodes that are in self-loops
         :rtype: Set[str]
         """
@@ -60,8 +60,9 @@ class SplitMiner:
 
     def find_short_loops(self) -> Set[Tuple[str, str]]:
         """
-            Function to find short-loops in traces.
-            A short loop is a pattern {a,b,a} in a trace, where a,b - events
+        Function to find short-loops in traces.
+        A short loop is a pattern {a,b,a} in a trace, where a,b - events.
+        {a,a,a} is not considered a short-loop but a self-loop
         :return: Set containing pairs (a,b)
         :rtype: Set[Tuple[str, str]]
         """
@@ -76,7 +77,7 @@ class SplitMiner:
 
     def count_arc_frequency(self) -> Dict[Tuple[str, str], int]:
         """
-            Function to count arc frequency. Returns a
+        Function to count arc frequency. Returns a
         :return: dictionary in format (a,b) : frequency, where a,b - events,
             frequency - times this transition happens
         :rtype: Dict[Tuple[str, str], int]
