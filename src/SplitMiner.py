@@ -32,12 +32,12 @@ class SplitMiner:
         start_event_set = set()
         end_event_set = set()
         direct_follows_graph = dict()
-        for index, row in self.log.traces.iterrows():
-            if row['trace'][0] not in start_event_set:
-                start_event_set.add(row['trace'][0])
-            if row['trace'][-1] not in end_event_set:
-                end_event_set.add(row['trace'][-1])
-            for ev_i, ev_j in pairwise(row['trace']):
+        for trace in self.log.traces['trace'].values:
+            if trace[0] not in start_event_set:
+                start_event_set.add(trace[0])
+            if trace[-1] not in end_event_set:
+                end_event_set.add(trace[-1])
+            for ev_i, ev_j in pairwise(trace):
                 if ev_i not in direct_follows_graph.keys():
                     direct_follows_graph[ev_i] = set()
                 direct_follows_graph[ev_i].add(ev_j)
@@ -358,6 +358,7 @@ class SplitMiner:
 # log = SplitMiner("../logs/preprocessed/B1.csv")
 # log.perform_mining()
 # print(log.direct_follows_graph)
+xxx = SplitMiner("../logs/preprocessed/B1.csv")
 print("finished")
 
 """
