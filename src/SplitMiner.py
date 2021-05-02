@@ -7,8 +7,8 @@ from typing import Set, Dict, Tuple, List
 import numpy as np
 from more_itertools import pairwise
 
-from src.LogFile import LogFile
-from src.BPMNModel import BPMNModel
+from LogFile import LogFile
+from BPMNModel import BPMNModel
 
 
 class LogType(Enum):
