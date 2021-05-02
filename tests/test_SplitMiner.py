@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from src.BPMNModel import BPMNModel
-from src.SplitMiner import SplitMiner
+from BPMNModel import BPMNModel
+from SplitMiner import SplitMiner
 
 
 class TestSplitMiner(TestCase):
