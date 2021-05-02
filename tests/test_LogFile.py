@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from src.LogFile import LogFile, LogType
+from LogFile import LogFile, LogType
 from pandas.util.testing import assert_frame_equal
 
 
