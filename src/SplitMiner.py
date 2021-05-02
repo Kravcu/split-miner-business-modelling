@@ -1,23 +1,14 @@
 import copy
 from collections import defaultdict
-from enum import Enum
 from itertools import combinations
 from typing import Set, Dict, Tuple, List
-
 import numpy as np
 from more_itertools import pairwise
-
 from LogFile import LogFile
 from BPMNModel import BPMNModel
 
 
-class LogType(Enum):
-    CSV = 0
-    X = 1  # kluza wspominał coś o jakimś drugim formacie logów, dodałem od razu bo pasowałoby go też mieć
-
-
 class SplitMiner:
-    USED_COLUMNS = ['trace']
 
     def __init__(self, path):
 
@@ -31,7 +22,6 @@ class SplitMiner:
         self.pdfg = dict()
         self.filtered_graph = dict()
         self.bpmn_model = BPMNModel("Not implemented", "Not implemented", set(), set(), set(), set(), set())
-
 
     def get_dfg(self) -> Tuple[Dict[str, set], set, set]:
         """
@@ -109,8 +99,6 @@ class SplitMiner:
 
         for node_a, node_b in self.short_loops:
             self.direct_follows_graph[node_a].remove(node_b)
-
-
 
     def perform_mining(self) -> None:
         """
