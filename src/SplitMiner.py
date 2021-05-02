@@ -83,15 +83,14 @@ class SplitMiner:
         :rtype: Dict[Tuple[str, str], int]
         """
         arc_frequency: Dict[Tuple[str, str], int] = defaultdict(int)
-        traces: List[List[str]] = self.log.traces['trace'].tolist()
-        for trace in traces:
+        for trace in self.log.traces['trace'].values:
             for source, target in zip(trace, trace[1:]):
                 arc_frequency[(source, target)] += 1
         return arc_frequency
 
     def remove_self_short_loops_from_dfg(self) -> None:
         """
-        Function to remove self and short loops from dfg. Returns a
+        Function to remove self and short loops from dfg.
         :return: None
         :rtype: None
         """
@@ -358,9 +357,6 @@ class SplitMiner:
 # log = SplitMiner("../logs/preprocessed/B1.csv")
 # log.perform_mining()
 # print(log.direct_follows_graph)
-xxx = SplitMiner("../logs/preprocessed/B1.csv")
-print("finished")
-
 """
 Initial DFG from Fig 2a (8 page)
 dfg_report = \
