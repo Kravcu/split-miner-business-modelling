@@ -1,4 +1,4 @@
-Case ID,Activity,Resource,Start Timestamp,Complete Timestamp,Variant,Variant index,(case) creator,(case) variant,(case) variant-index,concept:name,defectFixed,defectType,lifecycle:transition,numberRepairs,org:resource,phoneType
+ase ID,Activity,Resource,Start Timestamp,Complete Timestamp,Variant,Variant index,(case) creator,(case) variant,(case) variant-index,concept:name,defectFixed,defectType,lifecycle:transition,numberRepairs,org:resource,phoneType
 1,Register,System,1970/01/02 12:23:00.000,1970/01/02 12:23:00.000,Variant 2,2,Fluxicon Disco,Variant 2,2,Register,,,complete,,System,
 1,Analyze Defect,Tester3,1970/01/02 12:23:00.000,1970/01/02 12:30:00.000,Variant 2,2,Fluxicon Disco,Variant 2,2,Analyze Defect,,6,complete,,Tester3,T2
 1,Repair (Complex),SolverC1,1970/01/02 12:31:00.000,1970/01/02 12:49:00.000,Variant 2,2,Fluxicon Disco,Variant 2,2,Repair (Complex),,,complete,,SolverC1,

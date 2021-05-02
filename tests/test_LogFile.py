@@ -18,8 +18,8 @@ def test_parse_log_file(test):
 @pytest.mark.parametrize("test,expected", [
     ("../logs/raw/B1.csv", LogType.CSV),
     ("../logs/raw/B1.xes", LogType.XES),
-    (Path("../logs/raw/B1.csv"), LogType.CSV),
-    (Path("../logs/raw/B1.xes"), LogType.XES)
+    (Path("../logs/B1.csv"), LogType.CSV),
+    (Path("../logs/B1.xes"), LogType.XES)
 
 ])
 def test_get_log_type(test, expected):
