@@ -94,9 +94,23 @@ class TestSplitMiner(TestCase):
                   "c": ({"c"}, {"b"}),
                   "d": ({"d"}, {"b"})}
         succesors = {"b", "c", "d"}
-        actual_node = "b"
+        actual_node = "a"
         self.split_miner.discover_xor_splits(bpmn, succesors, splits, actual_node)
         expected = {"b": ({"b"}, {"c", "d"}),
-                    "xorb": ({"c", "d"}, {"b"})}
+                    "xora": ({"c", "d"}, {"b"})}
 
         self.assertEqual(expected, splits)
+
+    def test_discover_and_splits(self):
+        bpmn = BPMNModel("", "", set(), set(), set(), set(), set())
+        input_splits = {"b": ({"b"}, {"c", "d"}),
+                    "xora": ({"c", "d"}, {"b"})}
+        succesors = {"b", "xora"}
+        actual_node = "a"
+
+        expected = {"anda": ({"b", "c", "d"}, set())}
+        self.split_miner.discover_and_splits(bpmn, succesors, input_splits, actual_node)
+        self.assertEqual(expected, input_splits)
+
+
+

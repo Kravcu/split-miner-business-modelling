@@ -274,7 +274,7 @@ class SplitMiner:
     def discover_xor_splits(self, bpmn: BPMNModel, successors: Set[str], splits: Dict[str, Tuple[set, set]],
                             actual_node: str) -> None:
         """
-        Function to modify the given split structure in order to introduce xor splits. It is base on the special algorithm.
+        Function to modify the given split structure in order to introduce xor splits. It is base on the algorithm 3.
         Returns a
         :return:None
         :rtype: None
@@ -315,7 +315,7 @@ class SplitMiner:
     def discover_and_splits(self, bpmn: BPMNModel, successors: Set[str], splits: Dict[str, Tuple[set, set]],
                             actual_node: str) -> None:
         """
-        Function to modify the given split structure in order to introduce and splits. It is base on the special algorithm.
+        Function to modify the given split structure in order to introduce and splits. It is base on the  algorithm 4.
         Returns a
         :return:None
         :rtype: None
