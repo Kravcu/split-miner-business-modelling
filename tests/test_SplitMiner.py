@@ -63,7 +63,7 @@ class TestSplitMiner(TestCase):
         self.assertEqual(expected, result)
 
     def test_filter_graph(self):
-        pdfg = graph = {'a': {'d', 'b', 'c'}, 'b': {'e', 'f'}, 'c': {'g', 'f'}, 'd': {'g'},
+        pdfg = {'a': {'d', 'b', 'c'}, 'b': {'e', 'f'}, 'c': {'g', 'f'}, 'd': {'g'},
                         'e': {'c', 'h'}, 'f': {'g'}, 'g': {'h'}, 'h': {}}
         arc_frequency = {('a', 'b'): 60, ('a', 'c'): 20, ('a', 'd'): 20,
                          ('b', 'e'): 40, ('b', 'f'): 20, ('d', 'g'): 20,
@@ -170,3 +170,4 @@ class TestSplitMiner(TestCase):
         result = self.split_miner.get_nodes_with_multiple_successors()
 
         self.assertEqual(expected, result)
+

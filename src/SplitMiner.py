@@ -102,7 +102,7 @@ class SplitMiner:
         for node_a, node_b in self.short_loops:
             self.direct_follows_graph[node_a].remove(node_b)
 
-    def perform_mining(self) -> None:
+    def perform_mining(self, eta=50) -> None:
         """
         Function to perform sequential steps to run split miner stages
         Returns a
@@ -112,6 +112,9 @@ class SplitMiner:
         self.remove_self_short_loops_from_dfg()
         self.concurrent_nodes = self.find_concurrency()
         self.pdfg = self.generate_pdfg()
+        self.filter_graph(self.pdfg, eta, self.arc_frequency)
+        self.init_bpmn()
+        self.discover_all_splits()
 
     def find_concurrency(self, epsilon=0.8) -> Set[Tuple[str, str]]:
         """
@@ -364,11 +367,11 @@ class SplitMiner:
             successors.add(and_gateway)
             successors.difference_update(a)
 
-    def init_bpmn(self, edges):
+    def init_bpmn(self):
         self.bpmn_model.start_events = self.start_event_set
         self.bpmn_model.end_events = self.end_event_set
         self.bpmn_model.tasks = self.direct_follows_graph.keys()
-        self.bpmn_model.edges = edges
+
 
     def get_init_bpmn_edges_without_actual_node(self, pdfg: Dict[str, set], actual_node: str) -> Set[Tuple[str, str]]:
         edges = set()
