@@ -243,14 +243,7 @@ class SplitMiner:
             frequencies[edge] = arc_frequency[edge]
         return max(frequencies, key=frequencies.get)
 
-    def discover_splits(self, filtered_pdfg: Dict[str, set], node_a: str,
-                        concurrent_nodes: Set[Tuple[str, str]]):
-        """
-        Function to orchestrate split discovery, it uses functions which discover different types of splits
-        """
-        splits: Dict[str, Tuple[set, set]] = dict()
-        node_a_successors = filtered_pdfg[node_a]
-        splits = self.get_init_splits_for_node(concurrent_nodes, node_a_successors, splits)
+
 
     def get_init_splits_for_node(self, concurrent_nodes: Set[Tuple[str, str]], node_a_successors: Set[str],
                                  splits: Dict[str, Tuple[set, set]]) -> Dict[str, Tuple[set, set]]:
@@ -308,7 +301,7 @@ class SplitMiner:
                     future.add(node)
                     splits[xor] = (cover, future)
                 successors.add(xor)
-                successors = successors - x
+                successors.difference_update(x)
             if not x:
                 flag = False
 
@@ -351,8 +344,21 @@ class SplitMiner:
                 future.add(node)
                 splits[and_gateway] = (cover, future)
             successors.add(and_gateway)
-            successors = successors - a
+            successors.difference_update(a)
 
+    def init_bpmn(self, edges):
+        self.bpmn_model.start_events = self.start_event_set
+        self.bpmn_model.end_events = self.end_event_set
+        self.bpmn_model.tasks = self.direct_follows_graph.keys()
+        self.bpmn_model.edges = edges
+
+    def get_init_bpmn_edges_without_actual_node(self, pdfg: Dict[str, set], actual_node: str) -> Set[Tuple[str, str]]:
+        edges = set()
+        for node, successors in pdfg.items():
+            if node != actual_node:
+                for successor in successors:
+                    edges.add((node, successor))
+        return edges
 
 # log = SplitMiner("../logs/preprocessed/B1.csv")
 # log.perform_mining()

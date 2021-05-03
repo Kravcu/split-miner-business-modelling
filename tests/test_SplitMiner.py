@@ -101,8 +101,14 @@ class TestSplitMiner(TestCase):
 
         self.assertEqual(expected, splits)
 
+        expected_edges = {("xora", "c"), ("xora", "d")}
+        result_edges = bpmn.edges
+        self.assertEqual(expected_edges, result_edges)
+
+        self.assertEqual({"b", "xora"}, succesors)
+
     def test_discover_and_splits(self):
-        bpmn = BPMNModel("", "", set(), set(), set(), set(), set())
+        bpmn = BPMNModel("", "", set(), set(), set(), {("xora", "c"), ("xora", "d")}, set())
         input_splits = {"b": ({"b"}, {"c", "d"}),
                     "xora": ({"c", "d"}, {"b"})}
         succesors = {"b", "xora"}
@@ -111,6 +117,18 @@ class TestSplitMiner(TestCase):
         expected = {"anda": ({"b", "c", "d"}, set())}
         self.split_miner.discover_and_splits(bpmn, succesors, input_splits, actual_node)
         self.assertEqual(expected, input_splits)
+        expected_edges = {("anda", "b"), ("anda", "xora"), ("xora", "c"), ("xora", "d")}
+        result_edges = bpmn.edges
+        self.assertEqual(expected_edges, result_edges)
 
+    def test_get_init_bpmn_edges_without_actual_node(self):
+        pdfg = {'a': {'d', 'b', 'c'}, 'b': {'e', 'f'}, 'c': {'g', 'f'}, 'd': {'g'},
+                 'e': {'c', 'h'}, 'f': {'g'}, 'g': {'h'}, 'h': {}}
+        actual_node = 'a'
+        expected = {('b', 'e'), ('b', 'f'), ('d', 'g'),
+                     ('e', 'c'), ('e', 'h'), ('c', 'f'),
+                     ('c', 'g'), ('f', 'g'), ('g', 'h')}
+        result = self.split_miner.get_init_bpmn_edges_without_actual_node(pdfg, actual_node)
+        self.assertEqual(expected, result)
 
 
