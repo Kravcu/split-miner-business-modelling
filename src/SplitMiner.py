@@ -10,6 +10,8 @@ from BPMNModel import BPMNModel
 
 class SplitMiner:
 
+    concurrent_nodes: Set[Tuple[str, str]]
+
     def __init__(self, path):
 
         self.log = LogFile(path)
@@ -376,6 +378,39 @@ class SplitMiner:
                     edges.add((node, successor))
         return edges
 
+    def discover_all_splits(self):
+        """
+        Function to run split discovery on each filtered pdfg node, which has more than one outgoing node
+        Returns a
+        :return:None
+        :rtype: None
+        """
+        multiple_outgoing_nodes = self.get_nodes_with_multiple_successors()
+
+        for node in self.filtered_graph.keys():
+            if node in multiple_outgoing_nodes:
+                self.discover_splits_of_node(self.filtered_graph, node, self.concurrent_nodes)
+            else:
+                self.add_edges_to_bpmn_from_node(node)
+
+
+
+    def get_nodes_with_multiple_successors(self) -> Set[str]:
+        """
+        Function to modify the given split structure in order to introduce and splits. It is base on the  algorithm 4.
+        Returns a
+        :return:set of nodes which have more than one outgoing edge in filtered pdfg
+        :rtype: Set[str]
+        """
+        multiple_nodes = set()
+        for node in self.filtered_graph.keys():
+            if len(self.filtered_graph[node]) > 1:
+                multiple_nodes.add(node)
+        return multiple_nodes
+
+    def add_edges_to_bpmn_from_node(self, node):
+        for successor in self.filtered_graph[node]:
+            self.bpmn_model.edges.add((node, successor))
 
 
 

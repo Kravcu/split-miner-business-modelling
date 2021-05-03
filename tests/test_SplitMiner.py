@@ -146,3 +146,27 @@ class TestSplitMiner(TestCase):
         self.split_miner.discover_splits_of_node(pdfg, actual_node, concurrent_node)
         self.assertEqual(expected, self.split_miner.bpmn_model.edges)
 
+    def test_discover_all_splits(self):
+        pdfg = {'a': {'d', 'b', 'c'}, 'b': {'e', 'f'}, 'c': {'g'}, 'd': {'g'},
+                'e': {'h'}, 'f': {'g'}, 'g': {'h'}, 'h': {}}
+        concurrent_node = {("b", "c"), ("b", "d")}
+        self.split_miner.filtered_graph = pdfg
+        self.split_miner.concurrent_nodes = concurrent_node
+
+        self.split_miner.discover_all_splits()
+        expected_edges = {('a', 'anda'), ('anda', 'b'), ('anda', 'xora'), ('xora', 'c'), ('xora', 'd'),
+                    ('b', 'xorb'), ('xorb', 'f'), ('xorb', 'e'), ('d', 'g'),
+                    ('e', 'h'),
+                    ('c', 'g'), ('f', 'g'), ('g', 'h')}
+        result = self.split_miner.bpmn_model.edges
+        self.assertEqual(expected_edges, result)
+
+    def test_get_nodes_with_multiple_successors(self):
+        pdfg = {'a': {'d', 'b', 'c'}, 'b': {'e', 'f'}, 'c': {'g'}, 'd': {'g'},
+                'e': {'h'}, 'f': {'g'}, 'g': {'h'}, 'h': {}}
+        self.split_miner.filtered_graph = pdfg
+
+        expected = {'a', 'b'}
+        result = self.split_miner.get_nodes_with_multiple_successors()
+
+        self.assertEqual(expected, result)
