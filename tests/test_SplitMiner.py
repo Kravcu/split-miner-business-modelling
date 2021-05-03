@@ -131,4 +131,18 @@ class TestSplitMiner(TestCase):
         result = self.split_miner.get_init_bpmn_edges_without_actual_node(pdfg, actual_node)
         self.assertEqual(expected, result)
 
+    def test_discover_splits_of_node(self):
+        pdfg = {'a': {'d', 'b', 'c'}, 'b': {'e', 'f'}, 'c': {'g', 'f'}, 'd': {'g'},
+                'e': {'c', 'h'}, 'f': {'g'}, 'g': {'h'}, 'h': {}}
+        actual_node = 'a'
+        expected = {('a', 'anda'), ('anda', 'b'), ('anda', 'xora'), ('xora', 'c'), ('xora', 'd'),
+                    ('b', 'e'), ('b', 'f'), ('d', 'g'),
+                    ('e', 'c'), ('e', 'h'), ('c', 'f'),
+                    ('c', 'g'), ('f', 'g'), ('g', 'h')}
+        self.split_miner.bpmn_model.edges = {('b', 'e'), ('b', 'f'), ('d', 'g'),
+                     ('e', 'c'), ('e', 'h'), ('c', 'f'),
+                     ('c', 'g'), ('f', 'g'), ('g', 'h')}
+        concurrent_node = {("b", "c"), ("b", "d")}
+        self.split_miner.discover_splits_of_node(pdfg, actual_node, concurrent_node)
+        self.assertEqual(expected, self.split_miner.bpmn_model.edges)
 

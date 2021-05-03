@@ -243,6 +243,22 @@ class SplitMiner:
             frequencies[edge] = arc_frequency[edge]
         return max(frequencies, key=frequencies.get)
 
+    def discover_splits_of_node(self, filtered_pdfg: Dict[str, set], node_a: str,
+                        concurrent_nodes: Set[Tuple[str, str]]):
+        """
+        Function to orchestrate split discovery, it uses functions which discover different types of splits
+        """
+        successors = filtered_pdfg[node_a]
+        splits: Dict[str, Tuple[set, set]] = dict()
+        node_a_successors = filtered_pdfg[node_a]
+        splits = self.get_init_splits_for_node(concurrent_nodes, node_a_successors, splits)
+        # edges = self.get_init_bpmn_edges_without_actual_node(filtered_pdfg, node_a)
+        # self.init_bpmn(edges)
+        while len(successors) > 1:
+            self.discover_xor_splits(self.bpmn_model, successors, splits, node_a)
+            self.discover_and_splits(self.bpmn_model, successors, splits, node_a)
+        for successor in successors:
+            self.bpmn_model.edges.add((node_a, successor))
 
 
     def get_init_splits_for_node(self, concurrent_nodes: Set[Tuple[str, str]], node_a_successors: Set[str],
@@ -359,6 +375,9 @@ class SplitMiner:
                 for successor in successors:
                     edges.add((node, successor))
         return edges
+
+
+
 
 # log = SplitMiner("../logs/preprocessed/B1.csv")
 # log.perform_mining()
