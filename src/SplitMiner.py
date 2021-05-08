@@ -417,7 +417,7 @@ class SplitMiner:
 
 
 
-# log = SplitMiner("../logs/preprocessed/B1.csv")
+log = SplitMiner("../logs/B1.csv")
 # log.perform_mining()
 # print(log.direct_follows_graph)
 """

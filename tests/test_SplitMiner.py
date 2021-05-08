@@ -1,18 +1,39 @@
 from unittest import TestCase
 
 from BPMNModel import BPMNModel
+from LogFile import LogFile
 from SplitMiner import SplitMiner
 
 
 class TestSplitMiner(TestCase):
     def setUp(self) -> None:
         self.split_miner = SplitMiner("../logs/B1.csv")
+        self.default_test_path = "../logs/B1.csv"
 
     def test_get_most_frequent_edge_from_set(self):
         arc_frequencies = {('a', 'b'): 2, ('c', 'd'): 5, ('e', 'f'): 6}
         edges = {('a', 'b'), ('c', 'd')}
         result = self.split_miner.get_most_frequent_edge_from_set(edges, arc_frequencies)
         self.assertEqual(('c', 'd'), result)
+    
+    def test_get_dfg(self):
+        temp_split_miner = SplitMiner(self.default_test_path)
+        expected_start_set = {'a'}
+        expected_end_set = {'e', 'd'}
+        expected_dfg = {'a': {'b', 'c'}, 'b': {'a'}, 'c': {'c', 'e', 'd'}, 'd': {'e'}, 'e': {'d'}}
+        actual_dfg, actual_start_set, actual_end_set = temp_split_miner.get_dfg()
+        self.assertEqual(expected_start_set, actual_start_set)
+        self.assertEqual(expected_end_set, actual_end_set)
+        self.assertEqual(expected_dfg, actual_dfg)
+    
+    def test_find_self_loops(self):
+        temp_split_miner = SplitMiner(self.default_test_path)
+        expected_self_loops = {'c'}
+        self.assertEqual(expected_self_loops, temp_split_miner.find_self_loops())
+    
+    def test_find_short_loops(self):
+      temp_split_miner = SplitMiner(self.default_test_path)
+      expected_short_loops = {('', '')}
 
     def test_get_most_frequent_edge_from_set_when_real_input(self):
         arc_frequency = {('a', 'b'): 60, ('a', 'c'): 20, ('a', 'd'): 20,
