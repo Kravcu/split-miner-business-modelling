@@ -60,21 +60,21 @@ class SplitMiner:
                 self_loops.add(event)
         return self_loops
 
-    def find_short_loops(self) -> Set[Tuple[str, str]]:
+    def find_short_loops(self) -> Dict[Tuple[str, str], int]:
         """
         Function to find short-loops in traces.
         A short loop is a pattern {a,b,a} in a trace, where a,b - events.
         {a,a,a} is not considered a short-loop but a self-loop
-        :return: Set containing pairs (a,b)
-        :rtype: Set[Tuple[str, str]]
+        :return: dict containing pairs (a,b) and corresponding arc frequency
+        :rtype: Dict[Tuple[str, str], int]
         """
-        short_loops: Set[Tuple[str, str]] = set()
+        short_loops: Dict[Tuple[str, str], int] = defaultdict(int)
         # getting trace column, transforming it to tuples, and getting unique traces
         traces: List[List[str]] = self.log.traces['trace'].transform(tuple).unique()
         for trace in traces:
             for source, node, target in zip(trace[0:], trace[1:], trace[2:]):
                 if source == target and (source != node):
-                    short_loops.add((source, node))
+                    short_loops[(source, node)] += 1
         return short_loops
 
     def count_arc_frequency(self) -> Dict[Tuple[str, str], int]:

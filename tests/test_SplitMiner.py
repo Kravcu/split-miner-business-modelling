@@ -33,7 +33,8 @@ class TestSplitMiner(TestCase):
     
     def test_find_short_loops(self):
       temp_split_miner = SplitMiner(self.default_test_path)
-      expected_short_loops = {('', '')}
+      expected_short_loops = {('a', 'b'): 3, ('b', 'a'): 1}
+      self.assertEqual(expected_short_loops, temp_split_miner.short_loops)
 
     def test_get_most_frequent_edge_from_set_when_real_input(self):
         arc_frequency = {('a', 'b'): 60, ('a', 'c'): 20, ('a', 'd'): 20,
