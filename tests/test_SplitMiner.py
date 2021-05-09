@@ -32,10 +32,25 @@ class TestSplitMiner(TestCase):
         self.assertEqual(expected_self_loops, temp_split_miner.find_self_loops())
     
     def test_find_short_loops(self):
-      temp_split_miner = SplitMiner(self.default_test_path)
-      expected_short_loops = {('a', 'b'): 3, ('b', 'a'): 1}
-      self.assertEqual(expected_short_loops, temp_split_miner.short_loops)
+        temp_split_miner = SplitMiner(self.default_test_path)
+        expected_short_loops = {('a', 'b'): 3}
+        self.assertEqual(expected_short_loops, temp_split_miner.short_loops)
 
+    def test_count_arc_frequency(self):
+        temp_split_miner = SplitMiner(self.default_test_path)
+        expected_frequencies = {('a', 'b'): 3, ('b', 'a'): 3, ('a', 'c'): 5, ('c', 'd'): 3, ('d', 'e'): 3,
+                                ('c', 'c'): 4, ('c', 'e'): 2, ('e', 'd'): 2}
+        self.assertEqual(expected_frequencies, temp_split_miner.arc_frequency)
+    
+    def test_remove_short_loops(self):
+        temp_split_miner = SplitMiner(self.default_test_path)
+        expected_frequencies = {('a', 'c'): 5, ('c', 'd'): 3, ('d', 'e'): 3,
+                                ('c', 'c'): 4, ('c', 'e'): 2, ('e', 'd'): 2}
+        expected_dfg = {'a': { 'c'}, 'b': set(), 'c': {'c', 'e', 'd'}, 'd': {'e'}, 'e': {'d'}}
+        temp_split_miner.remove_short_loops()
+        self.assertEqual(expected_frequencies, temp_split_miner.arc_frequency)
+        self.assertEqual(expected_dfg, temp_split_miner.direct_follows_graph)
+        
     def test_get_most_frequent_edge_from_set_when_real_input(self):
         arc_frequency = {('a', 'b'): 60, ('a', 'c'): 20, ('a', 'd'): 20,
                          ('b', 'e'): 40, ('b', 'f'): 20, ('d', 'g'): 20,

@@ -72,9 +72,14 @@ class SplitMiner:
         # getting trace column, transforming it to tuples, and getting unique traces
         traces: List[List[str]] = self.log.traces['trace'].transform(tuple).unique()
         for trace in traces:
+            was_detected_in_previous_node = False
             for source, node, target in zip(trace[0:], trace[1:], trace[2:]):
-                if source == target and (source != node):
-                    short_loops[(source, node)] += 1
+                if not was_detected_in_previous_node:
+                    if source == target and (source != node):
+                        short_loops[(source, node)] += 1
+                        was_detected_in_previous_node = True
+                else:
+                    was_detected_in_previous_node = False
         return short_loops
 
     def count_arc_frequency(self) -> Dict[Tuple[str, str], int]:
@@ -99,8 +104,20 @@ class SplitMiner:
         for self_loop_node in self.self_loops:
             self.direct_follows_graph[self_loop_node].remove(self_loop_node)
 
-        for node_a, node_b in self.short_loops:
-            self.direct_follows_graph[node_a].remove(node_b)
+        self.remove_short_loops()
+
+    def remove_short_loops(self):
+        for node_a, node_b in self.short_loops.keys():
+            self.arc_frequency[(node_a, node_b)] -= self.short_loops[(node_a, node_b)]
+            self.arc_frequency[(node_b, node_a)] -= self.short_loops[(node_a, node_b)]
+            self.delete_nodes_if_zero_frequency(node_a, node_b)
+            self.delete_nodes_if_zero_frequency(node_b, node_a)
+
+    def delete_nodes_if_zero_frequency(self, node_a, node_b):
+        if self.arc_frequency[(node_a, node_b)] <= 0:
+            self.arc_frequency.pop((node_a, node_b))
+            if node_b in self.direct_follows_graph[node_a]:
+                self.direct_follows_graph[node_a].remove(node_b)
 
     def perform_mining(self, eta=50) -> None:
         """
