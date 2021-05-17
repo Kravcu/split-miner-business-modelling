@@ -2,14 +2,15 @@ import copy
 from collections import defaultdict
 from itertools import combinations
 from typing import Set, Dict, Tuple, List
+
 import numpy as np
 from more_itertools import pairwise
-from LogFile import LogFile
+
 from BPMNModel import BPMNModel
+from LogFile import LogFile
 
 
 class SplitMiner:
-
     concurrent_nodes: Set[Tuple[str, str]]
 
     def __init__(self, path):
@@ -23,7 +24,8 @@ class SplitMiner:
         self.concurrent_nodes.add("Not performed")
         self.pdfg = dict()
         self.filtered_graph = dict()
-        self.bpmn_model = BPMNModel("Not implemented", "Not implemented", set(), set(), set(), set(), set())
+        self.bpmn_model = BPMNModel("Not implemented", "Not implemented", set(), set(), set(), set(), set(),
+                                    self.self_loops)
 
     def get_dfg(self) -> Tuple[Dict[str, set], set, set]:
         """
@@ -266,7 +268,7 @@ class SplitMiner:
         return max(frequencies, key=frequencies.get)
 
     def discover_splits_of_node(self, filtered_pdfg: Dict[str, set], node_a: str,
-                        concurrent_nodes: Set[Tuple[str, str]]):
+                                concurrent_nodes: Set[Tuple[str, str]]):
         """
         Function to orchestrate split discovery, it uses functions which discover different types of splits
         """
@@ -281,7 +283,6 @@ class SplitMiner:
             self.discover_and_splits(self.bpmn_model, successors, splits, node_a)
         for successor in successors:
             self.bpmn_model.edges.add((node_a, successor))
-
 
     def get_init_splits_for_node(self, concurrent_nodes: Set[Tuple[str, str]], node_a_successors: Set[str],
                                  splits: Dict[str, Tuple[set, set]]) -> Dict[str, Tuple[set, set]]:
@@ -389,7 +390,6 @@ class SplitMiner:
         self.bpmn_model.end_events = self.end_event_set
         self.bpmn_model.tasks = self.direct_follows_graph.keys()
 
-
     def get_init_bpmn_edges_without_actual_node(self, pdfg: Dict[str, set], actual_node: str) -> Set[Tuple[str, str]]:
         edges = set()
         for node, successors in pdfg.items():
@@ -413,8 +413,6 @@ class SplitMiner:
             else:
                 self.add_edges_to_bpmn_from_node(node)
 
-
-
     def get_nodes_with_multiple_successors(self) -> Set[str]:
         """
         Function to modify the given split structure in order to introduce and splits. It is base on the  algorithm 4.
@@ -433,10 +431,9 @@ class SplitMiner:
             self.bpmn_model.edges.add((node, successor))
 
 
-
-log = SplitMiner("../logs/B1.csv")
-# log.perform_mining()
-# print(log.direct_follows_graph)
+log = SplitMiner("../logs/B4.csv")
+log.perform_mining()
+log.bpmn_model.draw()
 """
 Initial DFG from Fig 2a (8 page)
 dfg_report = \

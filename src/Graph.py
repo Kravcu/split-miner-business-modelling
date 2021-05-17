@@ -30,11 +30,21 @@ class Graph(pgv.AGraph):
         super(Graph, self).add_node(*args, **kwargs, **self.GATEWAY_STYLE, label="+", )
 
     def _add_xor_gateway(self, *args, **kwargs) -> None:
-        super(Graph, self).add_node(*args, **kwargs, **self.GATEWAY_STYLE, label="×")
+        super(Graph, self).add_node(*args, **kwargs, **self.GATEWAY_STYLE, label="")
 
     def _add_or_gateway(self, *args, **kwargs) -> None:
         super(Graph, self).add_node(*args, **kwargs, **self.GATEWAY_STYLE, label="○")
-
+    def add_custom_node(self,name,label,*args,**kwargs)-> None:
+        node_label = ""
+        if label == 'and':
+            node_label = "+"
+        elif label == 'xor':
+            node_label = "×"
+        elif label == 'or':
+            node_label = "○"
+        else:
+            raise NotImplementedError
+        super(Graph, self).add_node(name, **kwargs, **self.GATEWAY_STYLE, label=node_label)
     def add_edge(self, u: str, v: str = None, key=None, **kwargs) -> None:
         """
         Add edge between nodes.
@@ -56,6 +66,24 @@ class Graph(pgv.AGraph):
         :return: None
         :rtype: None
         """
+        try:
+            super(Graph, self).get_node(u)
+        except KeyError:
+            if 'and' in u:
+                self.add_custom_node(u, 'and')
+            elif 'xor' in u:
+                self.add_custom_node(u, 'xor')
+            elif 'or' in u:
+                self.add_custom_node(u, 'or')
+        try:
+            super(Graph, self).get_node(v)
+        except KeyError:
+            if 'and' in v:
+                self.add_custom_node(v, 'and')
+            elif 'xor' in v:
+                self.add_custom_node(v, 'xor')
+            elif 'or' in v:
+                self.add_custom_node(v, 'or')
 
         super(Graph, self).add_edge(u, v, key, **kwargs)
 
