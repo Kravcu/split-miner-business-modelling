@@ -118,6 +118,20 @@ class SplitMiner:
             self.arc_frequency.pop((node_a, node_b))
             if node_b in self.direct_follows_graph[node_a]:
                 self.direct_follows_graph[node_a].remove(node_b)
+    
+    def restore_short_loops(self):
+        short_loops = copy.copy(self.short_loops)
+        for node_a, node_b in short_loops.keys():
+            self.direct_follows_graph[node_a].add(node_b)
+            self.direct_follows_graph[node_b].add(node_a)
+            self.add_arc_frequency(node_a, node_b)
+            self.add_arc_frequency(node_b, node_a)
+
+    def add_arc_frequency(self, node_a, node_b):
+        if (node_a, node_b) in self.arc_frequency:
+            self.arc_frequency[(node_a, node_b)] += self.short_loops[(node_a, node_b)]
+        else:
+            self.arc_frequency[(node_a, node_b)] = self.short_loops[(node_a, node_b)]
 
     def perform_mining(self, eta=50) -> None:
         """
@@ -128,6 +142,7 @@ class SplitMiner:
         """
         self.remove_self_short_loops_from_dfg()
         self.concurrent_nodes = self.find_concurrency()
+        self.restore_short_loops()
         self.pdfg = self.generate_pdfg()
         self.filter_graph(self.pdfg, eta, self.arc_frequency)
         self.init_bpmn()
@@ -434,7 +449,7 @@ class SplitMiner:
 
 
 
-log = SplitMiner("../logs/B1.csv")
+#log = SplitMiner("../logs/B1.csv")
 # log.perform_mining()
 # print(log.direct_follows_graph)
 """
