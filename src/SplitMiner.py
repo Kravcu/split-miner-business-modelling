@@ -2,28 +2,31 @@ import copy
 from collections import defaultdict
 from itertools import combinations
 from typing import Set, Dict, Tuple, List
+
 import numpy as np
 from more_itertools import pairwise
-from LogFile import LogFile
+
 from BPMNModel import BPMNModel
+from LogFile import LogFile
+from OrderedSet  import OrderedSet
 
 
 class SplitMiner:
-
     concurrent_nodes: Set[Tuple[str, str]]
 
     def __init__(self, path):
 
         self.log = LogFile(path)
         self.direct_follows_graph, self.start_event_set, self.end_event_set = self.get_dfg()
+        print(self.direct_follows_graph)
         self.self_loops = self.find_self_loops()
         self.short_loops = self.find_short_loops()
         self.arc_frequency = self.count_arc_frequency()
-        self.concurrent_nodes = set()
+        self.concurrent_nodes = OrderedSet()
         self.concurrent_nodes.add("Not performed")
         self.pdfg = dict()
         self.filtered_graph = dict()
-        self.bpmn_model = BPMNModel("Not implemented", "Not implemented", set(), set(), set(), set(), set(),
+        self.bpmn_model = BPMNModel("Not implemented", "Not implemented", OrderedSet(), OrderedSet(), OrderedSet(), OrderedSet(), OrderedSet(),
                                     self.self_loops)
 
     def get_dfg(self) -> Tuple[Dict[str, set], set, set]:
@@ -32,8 +35,8 @@ class SplitMiner:
         :return: direct_follows_graph, start_event_set, end_event_set
         :rtype: Tuple[Dict[str, set], set, set]
         """
-        start_event_set = set()
-        end_event_set = set()
+        start_event_set = OrderedSet()
+        end_event_set = OrderedSet()
         direct_follows_graph = dict()
         for trace in self.log.traces['trace'].values:
             if trace[0] not in start_event_set:
@@ -42,11 +45,11 @@ class SplitMiner:
                 end_event_set.add(trace[-1])
             for ev_i, ev_j in pairwise(trace):
                 if ev_i not in direct_follows_graph.keys():
-                    direct_follows_graph[ev_i] = set()
+                    direct_follows_graph[ev_i] = OrderedSet()
                 direct_follows_graph[ev_i].add(ev_j)
             for event in end_event_set:
                 if event not in direct_follows_graph.keys():
-                    direct_follows_graph[event] = set()
+                    direct_follows_graph[event] = OrderedSet()
         return direct_follows_graph, start_event_set, end_event_set
 
     def find_self_loops(self) -> Set[str]:
@@ -55,7 +58,7 @@ class SplitMiner:
         :return: Set of nodes that are in self-loops
         :rtype: Set[str]
         """
-        self_loops: Set[str] = set()
+        self_loops: Set[str] = OrderedSet()
         for event in self.direct_follows_graph:
             if event in self.direct_follows_graph[event]:
                 self_loops.add(event)
@@ -148,6 +151,7 @@ class SplitMiner:
         self.filter_graph(self.pdfg, eta, self.arc_frequency)
         self.init_bpmn()
         self.discover_all_splits()
+        self.discover_start_splits()
 
     def find_concurrency(self, epsilon=0.8) -> Set[Tuple[str, str]]:
         """
@@ -156,7 +160,7 @@ class SplitMiner:
         :return: Set containing pairs (a,b)
         :rtype: Set[Tuple[str, str]]
         """
-        concurrent_nodes: Set[Tuple[str, str]] = set()
+        concurrent_nodes: Set[Tuple[str, str]] = OrderedSet()
         arc_frequency: Dict[Tuple[str, str], int] = self.count_arc_frequency()
         for node_a, node_b in combinations(self.direct_follows_graph.keys(), 2):  # check time complexity
             print(node_a, node_b)
@@ -189,10 +193,10 @@ class SplitMiner:
                                                                     most_frequent_edges,
                                                                     pdfg,
                                                                     arc_frequency)
-        filtered_edges = set()
+        filtered_edges = OrderedSet()
         filtered_graph: Dict[str, set] = dict()
         for node in pdfg.keys():
-            filtered_graph[node] = set()
+            filtered_graph[node] = OrderedSet()
         while len(most_frequent_edges) > 0:
             edge = self.get_most_frequent_edge_from_set(most_frequent_edges, arc_frequency)
             node_a, node_b = edge
@@ -211,7 +215,7 @@ class SplitMiner:
         :return: set of the most frequent edges
         :rtype: Set[str, str]
         """
-        most_frequent_edges = set()
+        most_frequent_edges = OrderedSet()
         for graph_node in graph.keys():
             outgoing_edges_freq: Dict[Tuple[str, str], int] = dict()
             for outgoing_node in graph[graph_node]:
@@ -234,7 +238,7 @@ class SplitMiner:
 
     @staticmethod
     def get_predecessors(graph: Dict[str, set], node: str) -> Set[str]:
-        predecessors = set()
+        predecessors = OrderedSet()
         for graph_node in graph.keys():
             if node in graph[graph_node]:
                 predecessors.add(graph_node)
@@ -282,7 +286,7 @@ class SplitMiner:
         return max(frequencies, key=frequencies.get)
 
     def discover_splits_of_node(self, filtered_pdfg: Dict[str, set], node_a: str,
-                        concurrent_nodes: Set[Tuple[str, str]]):
+                                concurrent_nodes: Set[Tuple[str, str]]):
         """
         Function to orchestrate split discovery, it uses functions which discover different types of splits
         """
@@ -298,7 +302,6 @@ class SplitMiner:
         for successor in successors:
             self.bpmn_model.edges.add((node_a, successor))
 
-
     def get_init_splits_for_node(self, concurrent_nodes: Set[Tuple[str, str]], node_a_successors: Set[str],
                                  splits: Dict[str, Tuple[set, set]]) -> Dict[str, Tuple[set, set]]:
         """
@@ -309,8 +312,9 @@ class SplitMiner:
         """
 
         for successor in node_a_successors:
-            successor_cover = {successor}
-            successor_future = set()
+            successor_cover = OrderedSet(successor)
+
+            successor_future = OrderedSet()
             for successor_temp in node_a_successors:
                 if successor_temp != successor and ((successor, successor_temp) in concurrent_nodes or
                                                     (successor_temp, successor) in concurrent_nodes):
@@ -328,7 +332,7 @@ class SplitMiner:
         """
         flag = True
         while flag:
-            x = set()
+            x = OrderedSet()
             for successor1 in successors:
                 cover_u, future_s = splits[successor1]
                 future_k1 = copy.copy(future_s)
@@ -338,7 +342,7 @@ class SplitMiner:
                         x.add(successor2)
                         cover_u = cover_u | splits[successor2][0]
                 if x:
-                    x = x | {successor1}
+                    x = x | OrderedSet(successor1)
                     break
             if x:
                 xor = f"xor{actual_node}"
@@ -347,11 +351,11 @@ class SplitMiner:
                     bpmn.edges.add((xor, node))
                     splits.pop(node)
                 for node in cover_u:
-                    cover, future = splits.get(xor, (set(), set()))
+                    cover, future = splits.get(xor, (OrderedSet(), OrderedSet()))
                     cover.add(node)
                     splits[xor] = (cover, future)
                 for node in future_s:
-                    cover, future = splits.get(xor, (set(), set()))
+                    cover, future = splits.get(xor, (OrderedSet(), OrderedSet()))
                     future.add(node)
                     splits[xor] = (cover, future)
                 successors.add(xor)
@@ -367,9 +371,9 @@ class SplitMiner:
         :return:None
         :rtype: None
         """
-        a = set()
+        a = OrderedSet()
         for successor1 in successors:
-            a = set()
+            a = OrderedSet()
             cover_u, future_i = splits[successor1]
             cover_future_1 = cover_u | future_i
 
@@ -382,7 +386,7 @@ class SplitMiner:
                     future_i = future_i.intersection(future2)
 
             if a:
-                a = a | {successor1}
+                a = a | OrderedSet(successor1)
                 break
         if a:
             and_gateway = f"and{actual_node}"
@@ -390,11 +394,11 @@ class SplitMiner:
                 bpmn.edges.add((and_gateway, node))
                 splits.pop(node)
             for node in cover_u:
-                cover, future = splits.get(and_gateway, (set(), set()))
+                cover, future = splits.get(and_gateway, (OrderedSet(), OrderedSet()))
                 cover.add(node)
                 splits[and_gateway] = (cover, future)
             for node in future_i:
-                cover, future = splits.get(and_gateway, (set(), set()))
+                cover, future = splits.get(and_gateway, (OrderedSet(), OrderedSet()))
                 future.add(node)
                 splits[and_gateway] = (cover, future)
             successors.add(and_gateway)
@@ -405,9 +409,8 @@ class SplitMiner:
         self.bpmn_model.end_events = self.end_event_set
         self.bpmn_model.tasks = self.direct_follows_graph.keys()
 
-
     def get_init_bpmn_edges_without_actual_node(self, pdfg: Dict[str, set], actual_node: str) -> Set[Tuple[str, str]]:
-        edges = set()
+        edges = OrderedSet()
         for node, successors in pdfg.items():
             if node != actual_node:
                 for successor in successors:
@@ -429,7 +432,35 @@ class SplitMiner:
             else:
                 self.add_edges_to_bpmn_from_node(node)
 
+    def discover_start_splits(self):
+        lst = [self.in_nested_list(self.concurrent_nodes, elem) for elem in self.start_event_set]
+        if any(lst):
+            # if nodes are concurrent => relation is and
+            relation = "and"
+        else:
+            relation = "xor"
+        #print(relation)
+        #print("LEN BEFORE", len(self.bpmn_model.edges))
+        if len(self.start_event_set) > 1:
+            self.bpmn_model.edges.add(('start', relation + 'start'))
+            for elem in self.start_event_set:
+                self.bpmn_model.edges.add((relation + 'start', elem))
+        else:
+            for elem in self.start_event_set:
+                self.bpmn_model.edges.add(('start', elem))
+            #print("EDGE:", relation + 'start', elem)
 
+        #print("LEN AFTER", len(self.bpmn_model.edges))
+
+    def in_nested_list(self, my_list, item):
+        """
+        Determines if an item is in my_list, even if nested in a lower-level list.
+        """
+        if item in my_list:
+            return True
+        else:
+            return any(self.in_nested_list(sublist, item) for sublist in my_list if
+                       (isinstance(sublist, list) or isinstance(sublist, Tuple)))
 
     def get_nodes_with_multiple_successors(self) -> Set[str]:
         """
@@ -438,7 +469,7 @@ class SplitMiner:
         :return:set of nodes which have more than one outgoing edge in filtered pdfg
         :rtype: Set[str]
         """
-        multiple_nodes = set()
+        multiple_nodes = OrderedSet()
         for node in self.filtered_graph.keys():
             if len(self.filtered_graph[node]) > 1:
                 multiple_nodes.add(node)
@@ -449,7 +480,7 @@ class SplitMiner:
             self.bpmn_model.edges.add((node, successor))
 
 
-log = SplitMiner("../logs/B4.csv")
+log = SplitMiner("../logs/B7.csv")
 log.perform_mining()
 log.bpmn_model.draw()
 """

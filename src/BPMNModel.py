@@ -1,6 +1,10 @@
-from typing import Set, Tuple
+from enum import Enum
+from typing import Set, Tuple, Iterable
 
 from Graph import Graph
+
+
+
 
 
 class BPMNModel:
@@ -19,15 +23,15 @@ class BPMNModel:
         self.graph = Graph()
 
     def draw(self):
-
+        self.graph.add_event("start")
+        self.graph.add_end_event("end")
         for edge in self.edges:
             self.graph.add_edge(*edge)
         for node in self.self_loops:
             self.graph.mark_node_as_self_loop(node)
-        self.graph.add_event("start")
-        self.graph.add_end_event("end")
-        for elem in self.start_events:
-            self.graph.add_edge("start", elem)
+        # for elem in self.start_events:
+        #     self.graph.add_edge("start", elem)
+
         for elem in self.end_events:
-            self.graph.add_edge(elem,"end")
+            self.graph.add_edge(elem, "end")
         self.graph.save_graph_to_image("test")
