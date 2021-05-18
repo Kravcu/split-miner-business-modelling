@@ -2,15 +2,14 @@ import copy
 from collections import defaultdict
 from itertools import combinations
 from typing import Set, Dict, Tuple, List
-
 import numpy as np
 from more_itertools import pairwise
-
-from BPMNModel import BPMNModel
 from LogFile import LogFile
+from BPMNModel import BPMNModel
 
 
 class SplitMiner:
+
     concurrent_nodes: Set[Tuple[str, str]]
 
     def __init__(self, path):
@@ -121,6 +120,20 @@ class SplitMiner:
             if node_b in self.direct_follows_graph[node_a]:
                 self.direct_follows_graph[node_a].remove(node_b)
 
+    def restore_short_loops(self):
+        short_loops = copy.copy(self.short_loops)
+        for node_a, node_b in short_loops.keys():
+            self.direct_follows_graph[node_a].add(node_b)
+            self.direct_follows_graph[node_b].add(node_a)
+            self.add_arc_frequency(node_a, node_b)
+            self.add_arc_frequency(node_b, node_a)
+
+    def add_arc_frequency(self, node_a, node_b):
+        if (node_a, node_b) in self.arc_frequency:
+            self.arc_frequency[(node_a, node_b)] += self.short_loops[(node_a, node_b)]
+        else:
+            self.arc_frequency[(node_a, node_b)] = self.short_loops[(node_a, node_b)]
+
     def perform_mining(self, eta=50) -> None:
         """
         Function to perform sequential steps to run split miner stages
@@ -130,6 +143,7 @@ class SplitMiner:
         """
         self.remove_self_short_loops_from_dfg()
         self.concurrent_nodes = self.find_concurrency()
+        self.restore_short_loops()
         self.pdfg = self.generate_pdfg()
         self.filter_graph(self.pdfg, eta, self.arc_frequency)
         self.init_bpmn()
@@ -268,7 +282,7 @@ class SplitMiner:
         return max(frequencies, key=frequencies.get)
 
     def discover_splits_of_node(self, filtered_pdfg: Dict[str, set], node_a: str,
-                                concurrent_nodes: Set[Tuple[str, str]]):
+                        concurrent_nodes: Set[Tuple[str, str]]):
         """
         Function to orchestrate split discovery, it uses functions which discover different types of splits
         """
@@ -283,6 +297,7 @@ class SplitMiner:
             self.discover_and_splits(self.bpmn_model, successors, splits, node_a)
         for successor in successors:
             self.bpmn_model.edges.add((node_a, successor))
+
 
     def get_init_splits_for_node(self, concurrent_nodes: Set[Tuple[str, str]], node_a_successors: Set[str],
                                  splits: Dict[str, Tuple[set, set]]) -> Dict[str, Tuple[set, set]]:
@@ -390,6 +405,7 @@ class SplitMiner:
         self.bpmn_model.end_events = self.end_event_set
         self.bpmn_model.tasks = self.direct_follows_graph.keys()
 
+
     def get_init_bpmn_edges_without_actual_node(self, pdfg: Dict[str, set], actual_node: str) -> Set[Tuple[str, str]]:
         edges = set()
         for node, successors in pdfg.items():
@@ -412,6 +428,8 @@ class SplitMiner:
                 self.discover_splits_of_node(self.filtered_graph, node, self.concurrent_nodes)
             else:
                 self.add_edges_to_bpmn_from_node(node)
+
+
 
     def get_nodes_with_multiple_successors(self) -> Set[str]:
         """

@@ -207,4 +207,11 @@ class TestSplitMiner(TestCase):
         result = self.split_miner.get_nodes_with_multiple_successors()
 
         self.assertEqual(expected, result)
+    
+    def test_perform_mining(self):
+        temp_split_miner = SplitMiner(self.default_test_path)
+        temp_split_miner.perform_mining()
+        self.assertEqual("", "")
+        
+        
 
