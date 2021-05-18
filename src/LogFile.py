@@ -109,7 +109,7 @@ class LogFile:
         for trace in loaded_log:
             event_list = []
             for event in trace:
-                event_list.append(event.get_attributes()[CASE_ID])
+                event_list.append(str(event.get_attributes()[CASE_ID]))
             traces_list.append(event_list)
             indexes_list.append(trace.get_attributes()[CASE_ID])
         dfs = pd.DataFrame({self._output_column: traces_list}, index=indexes_list)
