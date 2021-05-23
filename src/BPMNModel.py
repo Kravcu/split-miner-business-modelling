@@ -4,9 +4,6 @@ from typing import Set, Tuple, Iterable
 from Graph import Graph
 
 
-
-
-
 class BPMNModel:
 
     def __init__(self, start_events: Set[str], end_events: Set[str], and_events: set, xor_events: set,
