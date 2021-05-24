@@ -1,5 +1,7 @@
 from typing import Set, Dict, Tuple, List
 
+from more_itertools import first
+
 from BPMNModel import BPMNModel
 
 
@@ -8,9 +10,11 @@ class TTG:
         super().__init__()
         self.tasks = bpmn.tasks
         self.edges, self.edges_map = self.init_TTG_from_BPMN(bpmn)
+        self.back_edge = self.init_back_edge(bpmn.start_events, bpmn.end_events)
         self.normalized_tasks = set()
         self.normalized_edges = set()
         self.normalized_edges_map = dict()
+
 
     def init_TTG_from_BPMN(self, bpmn: BPMNModel) -> Tuple[Set[str], Dict[str, Tuple[str, str]]]:
         edges = set()
@@ -101,6 +105,15 @@ class TTG:
             if node_b == task and (node_a not in nodes_to_split and node_b not in nodes_to_split):
                 predecessors[edge] = nodes
         return predecessors
+
+    def init_back_edge(self, start_events: Set[str], end_events: Set[str]) -> Tuple[str, str]:
+        start_event = first(start_events)
+        end_event = first(end_events)
+
+        back_edge = f"back_edge"
+        self.edges.add(back_edge)
+        self.edges_map[back_edge] = (start_event, end_event)
+
 
 
 
