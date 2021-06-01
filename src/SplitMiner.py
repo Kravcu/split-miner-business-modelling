@@ -7,8 +7,9 @@ import numpy as np
 from more_itertools import pairwise
 
 from BPMNModel import BPMNModel
+from JavaCaller import JavaCaller
 from LogFile import LogFile
-from OrderedSet  import OrderedSet
+from OrderedSet import OrderedSet
 
 
 class SplitMiner:
@@ -26,7 +27,8 @@ class SplitMiner:
         self.concurrent_nodes.add("Not performed")
         self.pdfg = dict()
         self.filtered_graph = dict()
-        self.bpmn_model = BPMNModel("Not implemented", "Not implemented", OrderedSet(), OrderedSet(), OrderedSet(), OrderedSet(), OrderedSet(),
+        self.bpmn_model = BPMNModel("Not implemented", "Not implemented", OrderedSet(), OrderedSet(), OrderedSet(),
+                                    OrderedSet(), OrderedSet(),
                                     self.self_loops)
 
     def get_dfg(self) -> Tuple[Dict[str, set], set, set]:
@@ -152,6 +154,7 @@ class SplitMiner:
         self.init_bpmn()
         self.discover_all_splits()
         self.discover_start_splits()
+        self.discover_joins(self.pdfg)
 
     def find_concurrency(self, epsilon=0.8) -> Set[Tuple[str, str]]:
         """
@@ -439,8 +442,8 @@ class SplitMiner:
             relation = "and"
         else:
             relation = "xor"
-        #print(relation)
-        #print("LEN BEFORE", len(self.bpmn_model.edges))
+        # print(relation)
+        # print("LEN BEFORE", len(self.bpmn_model.edges))
         if len(self.start_event_set) > 1:
             self.bpmn_model.edges.add(('start', relation + 'start'))
             for elem in self.start_event_set:
@@ -448,9 +451,9 @@ class SplitMiner:
         else:
             for elem in self.start_event_set:
                 self.bpmn_model.edges.add(('start', elem))
-            #print("EDGE:", relation + 'start', elem)
+            # print("EDGE:", relation + 'start', elem)
 
-        #print("LEN AFTER", len(self.bpmn_model.edges))
+        # print("LEN AFTER", len(self.bpmn_model.edges))
 
     def in_nested_list(self, my_list, item):
         """
@@ -479,8 +482,13 @@ class SplitMiner:
         for successor in self.filtered_graph[node]:
             self.bpmn_model.edges.add((node, successor))
 
+    def discover_joins(self, dfg):
+        java_caller = JavaCaller()
+        java_caller.make_call_and_get_formatted_result(dfg)
+        # TODO: parse output from java to graph
 
-log = SplitMiner("../logs/B7.csv")
+
+log = SplitMiner("../logs/B4.csv")
 log.perform_mining()
 log.bpmn_model.draw()
 """
