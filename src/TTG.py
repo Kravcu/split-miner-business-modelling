@@ -113,6 +113,7 @@ class TTG:
         back_edge = f"back_edge"
         self.edges.add(back_edge)
         self.edges_map[back_edge] = (start_event, end_event)
+        return back_edge
 
 
 
