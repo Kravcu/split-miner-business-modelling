@@ -1,10 +1,6 @@
-from enum import Enum
-from typing import Set, Tuple, Iterable
+from typing import Set, Tuple, Dict, List
 
 from Graph import Graph
-
-
-
 
 
 class BPMNModel:
@@ -22,7 +18,12 @@ class BPMNModel:
         self.self_loops = self_loops
         self.graph = Graph()
 
-    def draw(self):
+    def draw(self) -> None:
+        """
+        Function to draw visual representation of model.
+        :return: None
+        :rtype: None
+        """
         self.graph.add_event("start")
         self.graph.add_end_event("end")
         for edge in self.edges:
@@ -35,3 +36,18 @@ class BPMNModel:
         for elem in self.end_events:
             self.graph.add_edge(elem, "end")
         self.graph.save_graph_to_image("test")
+
+    def get_representation_for_java(self) -> Dict[str, List[str]]:
+        """
+        Function to prepare a representation for calling java RPSTSolver
+        :return:
+        :rtype:
+        """
+        repr_dict = {}
+        for (source, target) in self.edges:
+            if source not in repr_dict:
+                repr_dict[source] = [target]
+            else:
+                if target not in repr_dict[source]:
+                    repr_dict[source].append(target)
+        return repr_dict

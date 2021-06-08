@@ -18,14 +18,14 @@ class LogFile:
     def __init__(self, path_to_log: Union[str, Path], case_column: str = 'Case ID',
                  activity_column: str = 'Activity', start_column: str = 'Start Timestamp',
                  output_column: str = 'trace'):
-        self._path = self.get_path_as_object(path_to_log)
+        self._path: Path = self.get_path_as_object(path_to_log)
         self.check_if_valid_log_file()
-        self._log_type = self.get_log_type(self._path)
+        self._log_type: LogType = self.get_log_type(self._path)
         self._case_column: str = case_column
         self._activity_column: str = activity_column
         self._start_column: str = start_column
         self._output_column: str = output_column
-        self._traces = self.parse_log_file()
+        self._traces: pd.DataFrame = self.parse_log_file()
 
     def check_if_valid_log_file(self) -> None:
         """

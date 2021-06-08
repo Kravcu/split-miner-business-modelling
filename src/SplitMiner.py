@@ -19,7 +19,7 @@ class SplitMiner:
 
         self.log = LogFile(path)
         self.direct_follows_graph, self.start_event_set, self.end_event_set = self.get_dfg()
-        print(self.direct_follows_graph)
+        #print(self.direct_follows_graph)
         self.self_loops = self.find_self_loops()
         self.short_loops = self.find_short_loops()
         self.arc_frequency = self.count_arc_frequency()
@@ -142,7 +142,6 @@ class SplitMiner:
     def perform_mining(self, eta=50) -> None:
         """
         Function to perform sequential steps to run split miner stages
-        Returns a
         :return: None
         :rtype: None
         """
@@ -155,6 +154,7 @@ class SplitMiner:
         self.discover_all_splits()
         self.discover_start_splits()
         self.discover_joins(self.pdfg)
+        self.discover_joins(self.pdfg)
 
     def find_concurrency(self, epsilon=0.8) -> Set[Tuple[str, str]]:
         """
@@ -166,7 +166,7 @@ class SplitMiner:
         concurrent_nodes: Set[Tuple[str, str]] = OrderedSet()
         arc_frequency: Dict[Tuple[str, str], int] = self.count_arc_frequency()
         for node_a, node_b in combinations(self.direct_follows_graph.keys(), 2):  # check time complexity
-            print(node_a, node_b)
+           # print(node_a, node_b)
             if node_b in self.direct_follows_graph[node_a] and node_a in self.direct_follows_graph[node_b]:
                 if ((node_a, node_b) not in self.short_loops) and ((node_b, node_a) not in self.short_loops):
                     if (abs(arc_frequency[(node_a, node_b)] -
@@ -484,13 +484,14 @@ class SplitMiner:
 
     def discover_joins(self, dfg):
         java_caller = JavaCaller()
-        java_caller.make_call_and_get_formatted_result(dfg)
+        java_caller.make_call_and_get_formatted_result(self.bpmn_model.get_representation_for_java(),1)
         # TODO: parse output from java to graph
 
 
 log = SplitMiner("../logs/B4.csv")
 log.perform_mining()
-log.bpmn_model.draw()
+print(str(log.bpmn_model.get_representation_for_java()))
+#log.bpmn_model.draw()
 """
 Initial DFG from Fig 2a (8 page)
 dfg_report = \
