@@ -50,4 +50,5 @@ class BPMNModel:
             else:
                 if target not in repr_dict[source]:
                     repr_dict[source].append(target)
+        print("JAVA INSIDE",repr_dict)
         return repr_dict

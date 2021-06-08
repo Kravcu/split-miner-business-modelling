@@ -1,7 +1,7 @@
 import json
 from subprocess import Popen, PIPE, STDOUT
 from typing import Dict, Set, List
-
+from OrderedSet import OrderedSet
 
 class JavaCaller:
 
@@ -33,4 +33,11 @@ class JavaCaller:
         return [item.decode('utf-8').rstrip() for item in p.stdout]
 
     def _format_stdout(self, stdout: List[str]) -> List[str]:
-        return stdout
+        stdout = stdout[0].replace("JOIN_join_", "").replace('AND', 'and').replace('XOR', 'xor').replace('OR', 'or')
+        stdout = stdout.split(", ")
+        edges = OrderedSet()
+        for edge in stdout:
+            edges.add(tuple(edge.split('->')))
+        print(edges)
+        return edges
+
