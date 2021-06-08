@@ -154,6 +154,7 @@ class SplitMiner:
         self.discover_all_splits()
         self.discover_start_splits()
         self.discover_joins(self.pdfg)
+        self.create_rpst_for_pdfg()
 
     def find_concurrency(self, epsilon=0.8) -> Set[Tuple[str, str]]:
         """
@@ -483,7 +484,19 @@ class SplitMiner:
 
     def discover_joins(self, dfg):
         java_caller = JavaCaller()
-        self.bpmn_model.edges = java_caller.make_call_and_get_formatted_result(self.bpmn_model.get_representation_for_java(), 1)
+        self.bpmn_model.edges = java_caller.make_call_and_get_formatted_result(
+            self.bpmn_model.get_representation_for_java(), 1)
+
+    def create_rpst_for_pdfg(self):
+        java_caller = JavaCaller()
+        java_caller.make_call_and_get_formatted_result(
+            self.get_dfg_java(), 0)
+
+    def get_dfg_java(self):
+        tmp = {}
+        for key in self.pdfg:
+            tmp[key] = list(self.pdfg[key])
+        return tmp
 
 
 log = SplitMiner("../logs/B7.csv")
