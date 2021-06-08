@@ -149,12 +149,13 @@ class SplitMiner:
         self.concurrent_nodes = self.find_concurrency()
         self.restore_short_loops()
         self.pdfg = self.generate_pdfg()
+        self.create_rpst_for_pdfg()
         self.filter_graph(self.pdfg, eta, self.arc_frequency)
         self.init_bpmn()
         self.discover_all_splits()
         self.discover_start_splits()
         self.discover_joins(self.pdfg)
-        self.create_rpst_for_pdfg()
+
 
     def find_concurrency(self, epsilon=0.8) -> Set[Tuple[str, str]]:
         """
@@ -485,12 +486,13 @@ class SplitMiner:
     def discover_joins(self, dfg):
         java_caller = JavaCaller()
         self.bpmn_model.edges = java_caller.make_call_and_get_formatted_result(
-            self.bpmn_model.get_representation_for_java(), 1)
+            self.bpmn_model.get_representation_for_java(), 0)
 
     def create_rpst_for_pdfg(self):
+        print("DFG",self.get_dfg_java())
         java_caller = JavaCaller()
         java_caller.make_call_and_get_formatted_result(
-            self.get_dfg_java(), 0)
+            self.get_dfg_java(), 1)
 
     def get_dfg_java(self):
         tmp = {}
@@ -499,7 +501,7 @@ class SplitMiner:
         return tmp
 
 
-log = SplitMiner("../logs/B7.csv")
+log = SplitMiner("../logs/B8.csv")
 log.perform_mining()
 log.bpmn_model.draw()
 """
