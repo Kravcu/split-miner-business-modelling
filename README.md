@@ -1,5 +1,9 @@
 # split-miner-business-modelling
 
+Our try to implement the [Split Miner algorithm](https://kodu.ut.ee/~dumas/pubs/icdm2017-split-miner.pdf) for university classess at AGH UST Kraków.
+
+This project was a failure, the discovery of gateway relations doesn't work properly.
+
 ## How to run
 1) Clone repository
 2) Install pygraphviz using guide from [PyGraphviz wiki](https://pygraphviz.github.io/documentation/stable/install.html)
